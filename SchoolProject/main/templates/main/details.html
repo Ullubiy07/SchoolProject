@@ -1,0 +1,18 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block links %}
+<link rel="stylesheet" href="{% static 'main/css/details.css' %}" media="screen">
+{% endblock links %}
+
+{% block content %}
+<section class="u-clearfix u-grey-10 u-section-1" id="sec-a15e">
+  <div class="u-container-style u-expanded-width u-product u-white u-product-1">
+    <div class="u-container-layout u-container-layout-1">
+      {% block details %}
+      {% endblock details %}
+    </div>
+  </div>
+</section>
+
+{% endblock content %}
