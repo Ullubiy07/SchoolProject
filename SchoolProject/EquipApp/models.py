@@ -1,41 +1,14 @@
 from django.db import models
 from django.db.models.fields.related import ForeignKey
 from django.urls import reverse
-from main.models import School, SchRep, Category
+from main.models import School, Category, Interval
 import datetime
-
-class Interval:
-    def __init__(self, begin, end, quantity):
-        self.begin = begin
-        self.end = end
-        self.quantity = quantity
-
-    def __str__(self):
-        return f"Интервал: {self.begin}, {self.end}, {self.quantity}"
-
-    def __repr__(self):
-        return f"Интервал: {self.begin}, {self.end}, {self.quantity}"
-
-    def __add__(self, other):
-        if other.begin > self.end or other.end < self.begin:
-            return False
-        
-        min_begin, max_begin = min(self.begin, other.begin), max(self.begin, other.begin)
-        min_end, max_end = min(self.end, other.end), max(self.end, other.end)
-        begin_quantity = min(self, other, key=lambda x: x.begin).quantity
-        end_quantity = max(self, other, key=lambda x: x.end).quantity
-
-        one = Interval(max_begin, min_end, self.quantity + other.quantity)
-        two = Interval(min_begin, max_begin, begin_quantity)
-        three = Interval(min_end, max_end, end_quantity)
-
-        return [i for i in [one, two, three] if i.begin != i.end and i.begin >= self.begin and i.end <= self.end]
 
 class Equipment(models.Model):
     name = models.CharField(max_length=50, verbose_name="Название")
     quantity = models.SmallIntegerField(verbose_name="Количество")
     owner = models.ForeignKey(School, on_delete=models.CASCADE, verbose_name="Владелец")
-    category = models.ForeignKey(Category, on_delete=models.SET_DEFAULT, default="Без категории", verbose_name="Категория")
+    category = models.ForeignKey(Category, on_delete=models.SET_DEFAULT, default=1, verbose_name="Категория")
     description = models.TextField(max_length=1000, default="Описания нет", verbose_name="Описание")
     image = models.ImageField(upload_to="equip_photos", verbose_name="Картинка", default="default_image.jpg")
     schedule = models.JSONField(verbose_name="Расписание", default=dict)

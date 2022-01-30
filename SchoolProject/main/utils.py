@@ -12,12 +12,27 @@ from .models import SchRep, Teacher
 main_menu = [
         {"title": "Главная", "url_name": "home", "access_levels": [0, 1, 2, 3]}, 
 
+        
+        {"title": "Вход/Регистрация", "access_levels": [0], "url_name": None,
+         "submenu": [{"title": "Вход", "access_levels": [0], "url_name": "login"},
+                     {"title": "Регистрация", "access_levels": [0], "url_name": "register"}
+         ]},
+
         {"title": "Каталоги", "access_levels": [1, 2, 3], "url_name": None,
          "submenu": [{"title": "Оборудование", "access_levels": [1, 2, 3], "url_name": "equip_list"},
+                     {"title": "Помещение", "access_levels": [1, 2, 3], "url_name": "room_list"},
                      {"title": "Лекции", "access_levels": [1, 2, 3], "url_name": "lecture_list"}
          ]},
 
-        {"title": "Запросы", "access_levels": [3], "url_name": "equip_query_list"},
+        {"title": "Запросы", "access_levels": [3], "url_name": None,
+         "submenu": [{"title": "Оборудование", "access_levels": [3], "url_name": "equip_query_list"},
+                     {"title": "Помещение", "access_levels": [3], "url_name": "room_query_list"}
+         ]},
+
+        {"title": "Бронирования школы", "access_levels": [3], "url_name": None,
+         "submenu": [{"title": "Оборудование", "access_levels": [3], "url_name": "my_equip_booking_list"},
+                     {"title": "Помещение", "access_levels": [3], "url_name": "my_room_booking_list"}
+         ]},
 
         {"title": "Личный кабинет", "access_levels": [1, 2, 3], "url_name": None,
          "submenu": [{"title": "Изменить данные аккаунта", "access_levels": [1, 2, 3], "url_name": "edit_user_data"},

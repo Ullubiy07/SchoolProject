@@ -1,4 +1,3 @@
-from django.http.response import HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 
 from .models import EquipQuery, Equipment

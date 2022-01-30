@@ -22,11 +22,11 @@ class Lecture(models.Model):
     organizer = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name="Организатор")
     start_datetime = models.DateTimeField(verbose_name="Дата и время начала")
     description = models.TextField(max_length=1000, default="Описания нет", verbose_name="Описание")
-    address = models.CharField(verbose_name="Адрес проведения", max_length=50, null=True)
+    address = models.CharField(verbose_name="Адрес проведения", max_length=50, default="нет")
     max_places = models.SmallIntegerField(verbose_name="Максимальное количество мест")
     duration = models.DurationField(verbose_name="Длительность лекции")
     target_audience = models.ForeignKey("TargetAudience", on_delete=models.SET_DEFAULT, 
-                                        default=0, verbose_name="Целевая аудитория")
+                                        default=1, verbose_name="Целевая аудитория")
     form = models.CharField(max_length=20, verbose_name="Форма проведения")
     image = models.ImageField(upload_to="lecture_photos", verbose_name="Картинка", default="default_image.jpg")
 
@@ -36,5 +36,5 @@ class Lecture(models.Model):
     def get_absolute_url(self):
         return reverse('lecture', kwargs={'lecture_id': self.pk})
 
-    def get_quantity_free_places(self):
+    def get_record_quantity(self):
         return len(LectureRecord.objects.filter(lecture=self))

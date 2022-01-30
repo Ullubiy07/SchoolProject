@@ -17,8 +17,9 @@ from django.contrib.auth.models import Group
 from .forms import *
 from .models import *
 from EquipApp.models import *
+from RoomApp.models import *
+from LectureApp.models import *
 from .utils import *
-
 
 class MyThread(Thread):
     def __init__(self, function, args: dict = None):
@@ -33,16 +34,18 @@ class MyThread(Thread):
         self.function(**self.args)
 
 def time_manager():
-    schedule.every().day.at("14:21").do(clean_db)
+    schedule.every().day.at("03:00").do(clean_db)
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        time.sleep(600)
 
 def clean_db():
     EquipBooking.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
     EquipQuery.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
+    RoomBooking.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
+    RoomQuery.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
+    Lecture.objects.filter(start_datetime__lt=(datetime.datetime.today() - datetime.timedelta(days=1))).delete()
 
-# Не запускать при разработке и тестах. Только во время работы на сервере.
 # TimeManager = MyThread(time_manager)
 # TimeManager.start()
 

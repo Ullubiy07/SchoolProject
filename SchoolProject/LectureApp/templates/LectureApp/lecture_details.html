@@ -7,19 +7,19 @@
 <h3 class="u-text u-text-3">Категория: {{lecture.category.name }}</h3>
 <h3 class="u-text u-text-3">Дата и время начала: {{lecture.start_datetime }}</h3>
 <h3 class="u-text u-text-3">Адрес: {{lecture.address }}</h3>
-<h3 class="u-text u-text-3">Количество мест: {{lecture.get_quantity_free_places }}/{{lecture.max_places}}</h3>
+<h3 class="u-text u-text-3">Количество мест: {{ lecture.get_record_quantity }}/{{lecture.max_places}}</h3>
 <h3 class="u-text u-text-3">Длительность: {{lecture.duration }}</h3>
 <h3 class="u-text u-text-3">Целевая аудитория: {{lecture.target_audience.name }}</h3>
-<h3 class="u-text u-text-3">Форма проведения: {{lecture.event_form }}</h3>
+<h3 class="u-text u-text-3">Форма проведения: {{lecture.form }}</h3>
 <h3 class="u-text u-text-4">Описание:</h3>
 <p class="u-product-control u-product-desc u-text u-text-5"> {{ lecture.description }}</p>
 <h3 class="u-text u-text-6">Возможные действия:</h3>
 <ul class="u-text u-text-7">
   {% if mode == 'Действие' %}
-    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="">Записаться</a></li>
+    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'create_lecture_record' lecture.pk %}">Записаться</a></li>
   {% elif mode == 'Владелец' %}
-    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="">Удалить</a></li>
-    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="">Изменить</a></li>
+    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'delete_lecture' lecture.pk %}">Удалить</a></li>
+    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'edit_lecture' lecture.pk %}">Изменить</a></li>
   {% endif %}
 </ul>
 {% if mode == 'Действие' %}

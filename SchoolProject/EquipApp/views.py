@@ -113,6 +113,36 @@ class EquipBookingList(LoginRequiredMixin, DataMixin, ListView):
         equip_id = self.kwargs['equip_id']
         return EquipBooking.objects.filter(equip_id=equip_id)
 
+class MyEquipBookingList(PermissionRequiredMixin, DataMixin, ListView):
+    permission_required = SchRep.Permission
+    model = EquipBooking
+    template_name = 'main/table.html'
+    context_object_name = 'equip_booking_list'
+    login_url = reverse_lazy('login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Бронирования школы')
+        table = []
+        for equip_booking in context["equip_booking_list"]:
+            table.append([
+                {"type": "link", "text": equip_booking.equip.name, "link": reverse("equip", kwargs={'equip_id': equip_booking.equip.pk})},
+                {"type": "text", "text": equip_booking.quantity},
+                {"type": "text", "text": equip_booking.booking_begin},
+                {"type": "text", "text": equip_booking.booking_end},
+            ])
+        context["table"] = table
+        context["title_text"] = f"Список оборудования, забронированного вашей школой"
+        if table:
+            context["table_head"] = ["Оборудование", "Количество", "Начало брони", "Конец брони"]
+        else:
+            context["text"] = "Ваша школа не бронировала оборудование"
+
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_queryset(self):
+        return EquipBooking.objects.filter(temp_owner=self.request.user.schrep.school)
+
 class EquipSchedule(LoginRequiredMixin, DataMixin, DetailView):
     model = Equipment
     template_name = 'main/table.html'
@@ -188,7 +218,7 @@ class MyEquipList(PermissionRequiredMixin, EquipList):
 class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
     permission_required = SchRep.Permission
     model = Equipment
-    template_name = 'EquipApp/respond_query.html'
+    template_name = 'main/respond_query.html'
     pk_url_kwarg = "query_id"
     success_url = reverse_lazy('equip_query_list')
 
@@ -328,6 +358,7 @@ class AddEquip(PermissionRequiredMixin, DataMixin, CreateView):
     permission_required = SchRep.Permission
     form_class = EquipForm
     template_name = 'main/form.html'
+    login_url = reverse_lazy('login')
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)

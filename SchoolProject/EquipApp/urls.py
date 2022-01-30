@@ -13,6 +13,7 @@ urlpatterns = [
     path('equip/<int:equip_id>/add_equip_query/', AddEquipQuery.as_view(), name='add_equip_query'),
     path('equip/<int:equip_id>/schedule/', EquipSchedule.as_view(), name='equip_schedule'),
 
+    path('my_equip_booking_list/', MyEquipBookingList.as_view(), name='my_equip_booking_list'),
     path('equip_query_list/', EquipQueryList.as_view(), name='equip_query_list'),
     path('my_equip_query_list/', MyEquipQueryList.as_view(), name='my_equip_query_list'),
     path('equip_query/<int:query_id>/edit/', EditEquipQuery.as_view(), name='edit_equip_query'),
