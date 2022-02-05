@@ -1,11 +1,16 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.fields.related import ForeignKey, OneToOneField
+from django.core.validators import FileExtensionValidator
 
 class School(models.Model):
-    name = models.CharField(max_length=50, db_index=True)
-    image = models.ImageField(upload_to="school_photos", default="default_image.jpg")
-    description = models.TextField(max_length=1000, default="Описания нет")
+    name = models.CharField(verbose_name="Название", max_length=50, db_index=True)
+    image = models.ImageField(verbose_name="Картинка", upload_to="school_photos", default="default_image.jpg")
+    description = models.TextField(verbose_name="Описание", max_length=1000, default="Описания нет")
+    sign = models.FileField(verbose_name="Подпись", upload_to="school_signs", null=True, blank=True, 
+                            validators=[FileExtensionValidator(allowed_extensions=['pfx'])])
+    sign_image = models.ImageField(verbose_name="Картинка подписи", upload_to="school_sign_images", null=True, blank=True)
+    sign_password = models.CharField(verbose_name="Пароль от подписи", max_length=30, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -13,6 +18,10 @@ class School(models.Model):
 class SchRep(models.Model):
     user = OneToOneField(User, on_delete=models.CASCADE)
     school = ForeignKey("School", on_delete=models.CASCADE)
+    sign = models.FileField(verbose_name="Подпись", upload_to="sch_rep_signs", null=True, blank=True, 
+                            validators=[FileExtensionValidator(allowed_extensions=['pfx'])])
+    sign_image = models.ImageField(verbose_name="Картинка подписи", upload_to="sch_rep_sign_images", null=True, blank=True)
+    sign_password = models.CharField(verbose_name="Пароль от подписи", max_length=30, null=True, blank=True)
 
     Permission = "main.school_rep"
     Group = "Представитель школы"

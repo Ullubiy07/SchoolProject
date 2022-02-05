@@ -46,3 +46,30 @@ class ChangeUserDataForm(UserChangeForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email')
+
+
+class SchRepSignForm(forms.ModelForm):
+    class Meta:
+        model = SchRep
+        fields = ('sign', 'sign_image', 'sign_password')
+        widgets = {
+                'sign': forms.FileInput(attrs={"class": common_class}),
+                'sign_image': forms.FileInput(attrs={"class": common_class}),
+                'sign_password': forms.TextInput(attrs={"class": common_class, "type": "password",
+                                                        "placeholder": "Введите пароль, который вы использовали в подписи"}),              
+            }
+
+class SchoolForm(forms.ModelForm):
+    class Meta:
+        model = School
+        fields = ('name', 'description', 'image', 'sign', 'sign_image', 'sign_password')
+        widgets = {
+                'name': forms.TextInput(attrs={"class": common_class}),
+                'description': forms.Textarea(attrs={"class": common_class, 
+                                                     "cols": 60, "rows": 10}),
+                'image': forms.FileInput(attrs={"class": common_class}), 
+                'sign': forms.FileInput(attrs={"class": common_class}),
+                'sign_image': forms.FileInput(attrs={"class": common_class}),
+                'sign_password': forms.TextInput(attrs={"class": common_class, "type": "password", 
+                                                        "placeholder": "Введите пароль, который вы использовали в подписи"}),     
+            }

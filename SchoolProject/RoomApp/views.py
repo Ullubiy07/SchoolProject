@@ -4,14 +4,47 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import *
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin 
 from django.contrib import messages
+from docxtpl import DocxTemplate
+from django.conf import settings
+import os
 
 from .forms import *
 from .models import *
 from main.models import *
 from .utils import *
 from main.utils import DataMixin
+from main.views import sign_contract, generate_random_string
 
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+
+def render_contract(sch_rep_1, room_query):
+    try:
+        template = os.path.join(settings.MEDIA_ROOT, "RoomContractTemplate.docx")
+
+        # Генерируем название файла
+        contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
+        while os.path.exists(contract_path):
+            contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
+
+        full_name_1 = sch_rep_1.user.get_full_name()
+        if full_name_1 == '':
+            full_name_1 = "имя и фамилия не указаны"
+        full_name_2 = room_query.sch_rep.user.get_full_name()
+        if full_name_2 == '':
+            full_name_2 = "имя и фамилия не указаны"
+        
+        doc = DocxTemplate(template)
+        context = {'sch_rep_1': full_name_1, 'sch_rep_2': full_name_2,
+                    'school_1': room_query.room.owner, 'school_2': room_query.sender,
+                    'room': room_query.room, 'quantity': room_query.quantity,
+                    'booking_begin': room_query.booking_begin, 'booking_end': room_query.booking_end,
+                    'size': room_query.room.size, 'address': room_query.room.address}
+        doc.render(context)
+        doc.save(contract_path)
+
+        return contract_path
+    except:
+        return
 
 class RoomQueryList(PermissionRequiredMixin, DataMixin, ListView):
     permission_required = SchRep.Permission
@@ -97,13 +130,14 @@ class RoomBookingList(LoginRequiredMixin, DataMixin, ListView):
                 {"type": "text", "text": room_booking.quantity},
                 {"type": "text", "text": room_booking.booking_begin},
                 {"type": "text", "text": room_booking.booking_end},
+                {"type": "link", "text": "Договор", "link": reverse("install_file", kwargs={'file_path': room_booking.contract.path})}
             ])
         context["table"] = table
         context["title_text"] = f"Список бронирования помещения {room.name}"
         context["link"] = room.get_absolute_url()
         context["link_text"] = "К помещению"
         if table:
-            context["table_head"] = ["Временный владелец", "Количество", "Начало брони", "Конец брони"]
+            context["table_head"] = ["Временный владелец", "Количество", "Начало брони", "Конец брони", "Договор"]
         else:
             context["text"] = "Это помещение никем не забронировано"
 
@@ -130,11 +164,12 @@ class MyRoomBookingList(PermissionRequiredMixin, DataMixin, ListView):
                 {"type": "text", "text": room_booking.quantity},
                 {"type": "text", "text": room_booking.booking_begin},
                 {"type": "text", "text": room_booking.booking_end},
+                {"type": "link", "text": "Договор", "link": reverse("install_file", kwargs={'file_path': room_booking.contract.path})}
             ])
         context["table"] = table
         context["title_text"] = f"Список помещений, забронированного вашей школой"
         if table:
-            context["table_head"] = ["Помещение", "Количество", "Начало брони", "Конец брони"]
+            context["table_head"] = ["Помещение", "Количество", "Начало брони", "Конец брони", "Договор"]
         else:
             context["text"] = "Ваша школа не бронировала помещения"
 
@@ -236,14 +271,24 @@ class RespondRoomQuery(PermissionRequiredMixin, DataMixin, DeleteView):
             room_query = RoomQuery.objects.get(pk = kwargs["query_id"])
             possible_quantity = room_query.room.get_quantity_on_interval(room_query.booking_begin, room_query.booking_end)
             if possible_quantity >= room_query.quantity:
-                RoomBooking.objects.create(room=room_query.room, quantity=room_query.quantity,
-                                            booking_begin=room_query.booking_begin,
-                                            booking_end=room_query.booking_end,
-                                            temp_owner=room_query.sender)
-                messages.add_message(request, messages.SUCCESS, 'Вы приняли запрос.')
+                contract = render_contract(request.user.schrep, room_query)
+                result, contract = sign_contract(contract, request.user.schrep, room_query.sch_rep)
+                if contract:
+                    RoomBooking.objects.create(room=room_query.room, quantity=room_query.quantity,
+                                                booking_begin=room_query.booking_begin,
+                                                booking_end=room_query.booking_end,
+                                                temp_owner=room_query.sender, 
+                                                contract=contract)
+                    if result:
+                        messages.add_message(request, messages.SUCCESS, 'Вы приняли запрос.')
+                    else:
+                        messages.add_message(request, messages.WARNING, 
+                        'Вы приняли запрос, однако некоторые подписи не могут быть обработаны. Проверьте договор.')
+                else:
+                    messages.add_message(request, messages.ERROR, 'Произошла ошибка при подписании документа. Проверьте подписи.')
             else:
                 messages.add_message(request, messages.WARNING, 
-                'Вы не можете принять запрос, т.к помещения не хватает. Запрос был автоматически отклонен.')
+                'Вы не можете принять запрос, т.к помещений не хватает. Запрос был автоматически отклонен.')
         else:
             messages.add_message(request, messages.ERROR, 'Вы отклонили запрос.')
         return super().post(request, args, kwargs)
@@ -275,6 +320,7 @@ class AddRoomQuery(PermissionRequiredMixin, DataMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.sender = self.request.user.schrep.school
+        self.object.sch_rep = self.request.user.schrep
         self.object.room = self.room
         self.object.save()
         messages.add_message(self.request, messages.SUCCESS, 'Вы успешно отправили запрос.')

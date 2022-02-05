@@ -11,5 +11,8 @@ urlpatterns = [
     path('create_teacher/', create_teacher, name='create_teacher'),
     path('edit_user_data/', ChangeUserData.as_view(), name='edit_user_data'),
 
+    path('change_sch_rep_sign/', ChangeSchRepSign.as_view(), name='change_sch_rep_sign'),
+    path('change_school_data/', ChangeSchoolData.as_view(), name='change_school_data'),
+
     path("install_file/<str:file_path>/", install_file, name="install_file"),
 ]

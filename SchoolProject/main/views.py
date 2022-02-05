@@ -5,14 +5,15 @@ from threading import Thread
 from django.contrib.auth import logout, login
 from django.http import FileResponse
 from django.urls.base import reverse_lazy
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.views.generic import *
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.contrib import messages
 from django.conf import settings
 import random
 from django.contrib.auth.models import Group
+import aspose.words as aw
 
 from .forms import *
 from .models import *
@@ -40,9 +41,9 @@ def time_manager():
         time.sleep(600)
 
 def clean_db():
-    EquipBooking.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
+    EquipBooking.objects.filter(booking_end__lt=datetime.datetime.today() - datetime.timedelta(days=14)).delete()
     EquipQuery.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
-    RoomBooking.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
+    RoomBooking.objects.filter(booking_end__lt=datetime.datetime.today() - datetime.timedelta(days=14)).delete()
     RoomQuery.objects.filter(booking_end__lt=datetime.datetime.today()).delete()
     Lecture.objects.filter(start_datetime__lt=(datetime.datetime.today() - datetime.timedelta(days=1))).delete()
 
@@ -130,6 +131,52 @@ class ChangePassword(LoginRequiredMixin, DataMixin, PasswordChangeView):
     def get_success_url(self):
         return reverse_lazy('home')
 
+class ChangeSchRepSign(PermissionRequiredMixin, DataMixin, UpdateView):
+    permission_required = SchRep.Permission
+    form_class = SchRepSignForm
+    template_name = 'main/form.html'
+    login_url = reverse_lazy('login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Изменить вашу подпись')
+        context["title_text"] = "Изменить вашу подпись"
+        context["button_text"] = "Изменить"
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_success_url(self):
+        return reverse_lazy('home')
+    
+    def form_valid(self, form):
+        messages.add_message(self.request, messages.SUCCESS, 'Вы успешно изменили свою подпись.')
+        return super().form_valid(form)
+    
+    def get_object(self):
+        return self.request.user.schrep
+
+class ChangeSchoolData(PermissionRequiredMixin, DataMixin, UpdateView):
+    permission_required = SchRep.Permission
+    form_class = SchoolForm
+    template_name = 'main/form.html'
+    login_url = reverse_lazy('login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Изменить данные школы')
+        context["title_text"] = "Изменить данные школы"
+        context["button_text"] = "Изменить"
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_success_url(self):
+        return reverse_lazy('home')
+    
+    def form_valid(self, form):
+        messages.add_message(self.request, messages.SUCCESS, 'Вы успешно изменили данные школы.')
+        return super().form_valid(form)
+    
+    def get_object(self):
+        return self.request.user.schrep.school
+
 def create_sch_rep_user(request):
     if request.user.has_perm(SchRep.Permission):
         username, password = generate_random_string(8), generate_random_string(8)
@@ -165,4 +212,45 @@ def logout_user(request):
     return redirect('login')
 
 def install_file(request, file_path):
-    return FileResponse(open(os.path.join(settings.MEDIA_ROOT, file_path),'rb'))
+    try:
+        return FileResponse(open(os.path.join(settings.MEDIA_ROOT, file_path),'rb'))
+    except:
+        messages.add_message(request, messages.ERROR, 'Не удается найти файл.')
+        return redirect('home')
+
+def create_sign(sign, sign_image, password, sign_line, path):
+    try:
+        signOptions = aw.digitalsignatures.SignOptions()
+            
+        signOptions.signature_line_id = sign_line.id
+        with open(sign_image.path, "rb") as image_file:
+            signOptions.signature_line_image = image_file.read()
+            
+        certHolder = aw.digitalsignatures.CertificateHolder.create(sign.path, password)
+            
+        aw.digitalsignatures.DigitalSignatureUtil.sign(path, path, certHolder, signOptions)
+        return True
+    except:
+        return False
+
+def sign_contract(contract_path, sch_rep_1, sch_rep_2):
+    try:
+        # Получаем строки подписей
+        doc = aw.Document(contract_path)
+        signatureLine1 = doc.first_section.body.get_child(aw.NodeType.SHAPE, 0, True).as_shape().signature_line
+        signatureLine2 = doc.first_section.body.get_child(aw.NodeType.SHAPE, 1, True).as_shape().signature_line
+        signatureLine3 = doc.first_section.body.get_child(aw.NodeType.SHAPE, 2, True).as_shape().signature_line
+        signatureLine4 = doc.first_section.body.get_child(aw.NodeType.SHAPE, 3, True).as_shape().signature_line
+        doc.save(contract_path)
+
+        # Подписываем
+        result = create_sign(sch_rep_1.sign, sch_rep_1.sign_image, sch_rep_1.sign_password, signatureLine1, contract_path)
+        result = create_sign(sch_rep_1.school.sign, sch_rep_1.school.sign_image, sch_rep_1.school.sign_password, 
+                             signatureLine2, contract_path)
+        result = create_sign(sch_rep_2.sign, sch_rep_2.sign_image, sch_rep_2.sign_password, signatureLine3, contract_path)
+        result = create_sign(sch_rep_2.school.sign, sch_rep_2.school.sign_image, sch_rep_2.school.sign_password, 
+                             signatureLine4, contract_path)
+
+        return result, contract_path
+    except:
+        return False, None

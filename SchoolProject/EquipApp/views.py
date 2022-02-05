@@ -2,16 +2,48 @@ from django.http.response import HttpResponseNotFound
 from django.urls.base import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import *
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin 
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
+from docxtpl import DocxTemplate
+from django.conf import settings
+import os
+
 
 from .forms import *
 from .models import *
 from main.models import *
 from .utils import *
 from main.utils import DataMixin
-
+from main.views import generate_random_string, sign_contract
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+
+def render_contract(sch_rep_1, equip_query):
+    try:
+        template = os.path.join(settings.MEDIA_ROOT, "EquipContractTemplate.docx")
+
+        # Генерируем название файла
+        contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
+        while os.path.exists(contract_path):
+            contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
+
+        full_name_1 = sch_rep_1.user.get_full_name()
+        if full_name_1 == '':
+            full_name_1 = "имя и фамилия не указаны"
+        full_name_2 = equip_query.sch_rep.user.get_full_name()
+        if full_name_2 == '':
+            full_name_2 = "имя и фамилия не указаны"
+        
+        doc = DocxTemplate(template)
+        context = {'sch_rep_1': full_name_1, 'sch_rep_2': full_name_2,
+                    'school_1': equip_query.equip.owner, 'school_2': equip_query.sender,
+                    'equip': equip_query.equip, 'quantity': equip_query.quantity,
+                    'booking_begin': equip_query.booking_begin, 'booking_end': equip_query.booking_end}
+        doc.render(context)
+        doc.save(contract_path)
+
+        return contract_path
+    except:
+        return
 
 class EquipQueryList(PermissionRequiredMixin, DataMixin, ListView):
     permission_required = SchRep.Permission
@@ -97,13 +129,14 @@ class EquipBookingList(LoginRequiredMixin, DataMixin, ListView):
                 {"type": "text", "text": equip_booking.quantity},
                 {"type": "text", "text": equip_booking.booking_begin},
                 {"type": "text", "text": equip_booking.booking_end},
+                {"type": "link", "text": "Договор", "link": reverse("install_file", kwargs={'file_path': equip_booking.contract.path})},
             ])
         context["table"] = table
         context["title_text"] = f"Список бронирования оборудования {equip.name}"
         context["link"] = equip.get_absolute_url()
         context["link_text"] = "К оборудованию"
         if table:
-            context["table_head"] = ["Временный владелец", "Количество", "Начало брони", "Конец брони"]
+            context["table_head"] = ["Временный владелец", "Количество", "Начало брони", "Конец брони", "Договор"]
         else:
             context["text"] = "Это оборудование никем не забронировано"
 
@@ -130,11 +163,12 @@ class MyEquipBookingList(PermissionRequiredMixin, DataMixin, ListView):
                 {"type": "text", "text": equip_booking.quantity},
                 {"type": "text", "text": equip_booking.booking_begin},
                 {"type": "text", "text": equip_booking.booking_end},
+                {"type": "link", "text": "Договор", "link": reverse("install_file", kwargs={'file_path': equip_booking.contract.path})},
             ])
         context["table"] = table
         context["title_text"] = f"Список оборудования, забронированного вашей школой"
         if table:
-            context["table_head"] = ["Оборудование", "Количество", "Начало брони", "Конец брони"]
+            context["table_head"] = ["Оборудование", "Количество", "Начало брони", "Конец брони", "Договор"]
         else:
             context["text"] = "Ваша школа не бронировала оборудование"
 
@@ -214,7 +248,6 @@ class MyEquipList(PermissionRequiredMixin, EquipList):
     def get_queryset(self):
         return Equipment.objects.filter(owner=self.request.user.schrep.school)
 
-
 class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
     permission_required = SchRep.Permission
     model = Equipment
@@ -236,11 +269,21 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
             equip_query = EquipQuery.objects.get(pk = kwargs["query_id"])
             possible_quantity = equip_query.equip.get_quantity_on_interval(equip_query.booking_begin, equip_query.booking_end)
             if possible_quantity >= equip_query.quantity:
-                EquipBooking.objects.create(equip=equip_query.equip, quantity=equip_query.quantity,
-                                            booking_begin=equip_query.booking_begin,
-                                            booking_end=equip_query.booking_end,
-                                            temp_owner=equip_query.sender)
-                messages.add_message(request, messages.SUCCESS, 'Вы приняли запрос.')
+                contract = render_contract(request.user.schrep, equip_query)
+                result, contract = sign_contract(contract, request.user.schrep, equip_query.sch_rep)
+                if contract:
+                    EquipBooking.objects.create(equip=equip_query.equip, quantity=equip_query.quantity,
+                                                booking_begin=equip_query.booking_begin,
+                                                booking_end=equip_query.booking_end,
+                                                temp_owner=equip_query.sender, 
+                                                contract=contract)
+                    if result:
+                        messages.add_message(request, messages.SUCCESS, 'Вы приняли запрос.')
+                    else:
+                        messages.add_message(request, messages.WARNING, 
+                        'Вы приняли запрос, однако некоторые подписи не могут быть обработаны. Проверьте договор.')
+                else:
+                    messages.add_message(request, messages.ERROR, 'Произошла ошибка при подписании документа. Проверьте подписи.')
             else:
                 messages.add_message(request, messages.WARNING, 
                 'Вы не можете принять запрос, т.к оборудования не хватает. Запрос был автоматически отклонен.')
@@ -275,6 +318,7 @@ class AddEquipQuery(PermissionRequiredMixin, DataMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.sender = self.request.user.schrep.school
+        self.object.sch_rep = self.request.user.schrep
         self.object.equip = self.equip
         self.object.save()
         messages.add_message(self.request, messages.SUCCESS, 'Вы успешно отправили запрос.')

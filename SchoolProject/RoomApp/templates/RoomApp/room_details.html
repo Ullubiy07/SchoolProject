@@ -9,7 +9,7 @@
 <h3 class="u-text u-text-3">Размер: {{room.size }} м²</h3>
 <h3 class="u-text u-text-3">Адрес: {{room.address }}</h3>
 <h3 class="u-text u-text-4">Описание:</h3><!--product_content-->
-<p class="u-product-control u-product-desc u-text u-text-5"><!--product_content_content--> {{ room.description }} <!--/product_content_content--></p><!--/product_content-->
+<p class="u-product-control u-product-desc u-text u-text-5"><!--product_content_content--> {{ room.description|linebreaksbr }} <!--/product_content_content--></p><!--/product_content-->
 <h3 class="u-text u-text-6">Возможные действия:</h3>
 <ul class="u-text u-text-7">
   <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'room_booking_list' room.pk %}">Бронирования</a></li>

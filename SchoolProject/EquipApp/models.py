@@ -1,7 +1,8 @@
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models.fields.related import ForeignKey
 from django.urls import reverse
-from main.models import School, Category, Interval
+from main.models import School, Category, Interval, SchRep
 import datetime
 
 class Equipment(models.Model):
@@ -86,12 +87,15 @@ class EquipBooking(models.Model):
     booking_begin = models.DateTimeField(verbose_name="Начало брони")
     booking_end = models.DateTimeField(verbose_name="Конец брони")
     temp_owner = models.ForeignKey(School, on_delete=models.CASCADE, verbose_name="Временный владелец")
+    contract = models.FileField(verbose_name="Договор", upload_to="contracts", null=True, blank=True,
+                                validators=[FileExtensionValidator(allowed_extensions=['docx'])])
 
     def __str__(self):
         return f"Бронь: {self.equip}"
 
 class EquipQuery(models.Model):
     sender = models.ForeignKey(School, on_delete=models.CASCADE, verbose_name="Отправитель")
+    sch_rep = ForeignKey(SchRep, on_delete=models.CASCADE, verbose_name="Представитель")
     equip = ForeignKey("Equipment", on_delete=models.CASCADE, verbose_name="Оборудование")
     quantity = models.SmallIntegerField(verbose_name="Количество")
     booking_begin = models.DateTimeField(verbose_name="Начало брони")

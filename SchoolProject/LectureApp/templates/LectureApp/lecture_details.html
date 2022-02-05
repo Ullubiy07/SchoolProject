@@ -12,7 +12,7 @@
 <h3 class="u-text u-text-3">Целевая аудитория: {{lecture.target_audience.name }}</h3>
 <h3 class="u-text u-text-3">Форма проведения: {{lecture.form }}</h3>
 <h3 class="u-text u-text-4">Описание:</h3>
-<p class="u-product-control u-product-desc u-text u-text-5"> {{ lecture.description }}</p>
+<p class="u-product-control u-product-desc u-text u-text-5"> {{ lecture.description|linebreaksbr }}</p>
 <h3 class="u-text u-text-6">Возможные действия:</h3>
 <ul class="u-text u-text-7">
   {% if mode == 'Действие' %}

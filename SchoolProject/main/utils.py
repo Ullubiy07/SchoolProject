@@ -37,11 +37,12 @@ main_menu = [
         {"title": "Личный кабинет", "access_levels": [1, 2, 3], "url_name": None,
          "submenu": [{"title": "Изменить данные аккаунта", "access_levels": [1, 2, 3], "url_name": "edit_user_data"},
                      {"title": "Изменить пароль", "access_levels": [1, 2, 3], "url_name": "change_password"},
+                     {"title": "Изменить свою подпись", "access_levels": [3], "url_name": "change_sch_rep_sign"},
+                     {"title": "Изменить данные школы", "access_levels": [3], "url_name": "change_school_data"},
                      {"title": "Создать аккаунт представителя", "access_levels": [3], "url_name": "create_sch_rep_user"},
-                     {"title": "Создать аккаунт учителя", "access_levels": [3], "url_name": "create_teacher"}
+                     {"title": "Создать аккаунт учителя", "access_levels": [3], "url_name": "create_teacher"},
+                     {"title": "Выйти", "access_levels": [1, 2, 3], "url_name": "logout"}
          ]},
-
-        {"title": "Выйти", "access_levels": [1, 2, 3], "url_name": "logout"},
     ]
 
 class DataMixin:
