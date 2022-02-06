@@ -1,3 +1,4 @@
+from xml.dom.minidom import Document
 from django.http.response import HttpResponseNotFound
 from django.urls.base import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
@@ -8,42 +9,40 @@ from docxtpl import DocxTemplate
 from django.conf import settings
 import os
 
-
 from .forms import *
 from .models import *
 from main.models import *
 from .utils import *
 from main.utils import DataMixin
 from main.views import generate_random_string, sign_contract
+
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 def render_contract(sch_rep_1, equip_query):
-    try:
-        template = os.path.join(settings.MEDIA_ROOT, "EquipContractTemplate.docx")
 
-        # Генерируем название файла
-        contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
-        while os.path.exists(contract_path):
-            contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
+    template = os.path.join(settings.STATIC_ROOT, "main/other/EquipContractTemplate.docx")
 
-        full_name_1 = sch_rep_1.user.get_full_name()
-        if full_name_1 == '':
-            full_name_1 = "имя и фамилия не указаны"
-        full_name_2 = equip_query.sch_rep.user.get_full_name()
-        if full_name_2 == '':
-            full_name_2 = "имя и фамилия не указаны"
-        
-        doc = DocxTemplate(template)
-        context = {'sch_rep_1': full_name_1, 'sch_rep_2': full_name_2,
-                    'school_1': equip_query.equip.owner, 'school_2': equip_query.sender,
-                    'equip': equip_query.equip, 'quantity': equip_query.quantity,
-                    'booking_begin': equip_query.booking_begin, 'booking_end': equip_query.booking_end}
-        doc.render(context)
-        doc.save(contract_path)
+    # Генерируем название файла
+    contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts\contract-{generate_random_string(10)}.docx")
+    while os.path.exists(contract_path):
+        contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts\contract-{generate_random_string(10)}.docx")
 
-        return contract_path
-    except:
-        return
+    full_name_1 = sch_rep_1.user.get_full_name()
+    if full_name_1 == '':
+        full_name_1 = "имя и фамилия не указаны"
+    full_name_2 = equip_query.sch_rep.user.get_full_name()
+    if full_name_2 == '':
+        full_name_2 = "имя и фамилия не указаны"
+    
+    doc = DocxTemplate(template)
+    context = {'sch_rep_1': full_name_1, 'sch_rep_2': full_name_2,
+                'school_1': equip_query.equip.owner, 'school_2': equip_query.sender,
+                'equip': equip_query.equip, 'quantity': equip_query.quantity,
+                'booking_begin': equip_query.booking_begin, 'booking_end': equip_query.booking_end}
+    doc.render(context)
+    doc.save(contract_path)
+
+    return contract_path
 
 class EquipQueryList(PermissionRequiredMixin, DataMixin, ListView):
     permission_required = SchRep.Permission

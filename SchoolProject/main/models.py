@@ -2,11 +2,12 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.fields.related import ForeignKey, OneToOneField
 from django.core.validators import FileExtensionValidator
+from django.templatetags.static import static
 
 class School(models.Model):
     name = models.CharField(verbose_name="Название", max_length=50, db_index=True)
     image = models.ImageField(verbose_name="Картинка", upload_to="school_photos", default="default_image.jpg")
-    description = models.TextField(verbose_name="Описание", max_length=1000, default="Описания нет")
+    description = models.TextField(verbose_name="Описание", max_length=1000, null=True, blank=True)
     sign = models.FileField(verbose_name="Подпись", upload_to="school_signs", null=True, blank=True, 
                             validators=[FileExtensionValidator(allowed_extensions=['pfx'])])
     sign_image = models.ImageField(verbose_name="Картинка подписи", upload_to="school_sign_images", null=True, blank=True)
@@ -14,6 +15,11 @@ class School(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_image_url(self):
+        if self.image:
+            return self.image.url
+        return static('main\img\default_image.jpg')
 
 class SchRep(models.Model):
     user = OneToOneField(User, on_delete=models.CASCADE)

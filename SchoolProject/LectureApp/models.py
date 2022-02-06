@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 from main.models import Category, Teacher
+from django.templatetags.static import static
 
 class TargetAudience(models.Model):
     name = models.CharField(max_length=50, verbose_name="Название", db_index=True)
@@ -28,7 +29,7 @@ class Lecture(models.Model):
     target_audience = models.ForeignKey("TargetAudience", on_delete=models.SET_DEFAULT, 
                                         default=1, verbose_name="Целевая аудитория")
     form = models.CharField(max_length=20, verbose_name="Форма проведения")
-    image = models.ImageField(upload_to="lecture_photos", verbose_name="Картинка", default="default_image.jpg")
+    image = models.ImageField(upload_to="lecture_photos", verbose_name="Картинка", null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -38,3 +39,8 @@ class Lecture(models.Model):
 
     def get_record_quantity(self):
         return len(LectureRecord.objects.filter(lecture=self))
+    
+    def get_image_url(self):
+        if self.image:
+            return self.image.url
+        return static('main\img\default_image.jpg')

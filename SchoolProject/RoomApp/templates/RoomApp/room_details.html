@@ -1,7 +1,7 @@
 {% extends 'main/details.html' %}
 
 {% block details %}
-<img alt="" class="u-border-3 u-border-grey-75 u-image u-image-round u-product-control u-radius-50 u-image-1" data-image-width="2000" data-image-height="1333"  src="{{ room.image.url }}"><!--/product_image-->
+<img alt="" class="u-border-3 u-border-grey-75 u-image u-image-round u-product-control u-radius-50 u-image-1" data-image-width="2000" data-image-height="1333"  src="{{ room.get_image_url }}"><!--/product_image-->
 <h1 class="u-align-center u-text u-text-1">{{ room.name }}</h1>
 <h3 class="u-text u-text-2">Количество: {{ room.quantity }}</h3>
 <h3 class="u-text u-text-3">Владелец: {{room.owner }}</h3>

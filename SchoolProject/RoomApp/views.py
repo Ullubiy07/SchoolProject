@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib import messages
 from docxtpl import DocxTemplate
 from django.conf import settings
+from django.templatetags.static import static
 import os
 
 from .forms import *
@@ -19,7 +20,7 @@ week_days = ["Понедельник", "Вторник", "Среда", "Четв
 
 def render_contract(sch_rep_1, room_query):
     try:
-        template = os.path.join(settings.MEDIA_ROOT, "RoomContractTemplate.docx")
+        template = os.path.join(settings.STATIC_ROOT, "main/other/EquipContractTemplate.docx")
 
         # Генерируем название файла
         contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")

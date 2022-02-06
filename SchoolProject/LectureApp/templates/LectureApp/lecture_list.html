@@ -22,7 +22,7 @@
         {% for lecture in lecture_list %}
           <div class="u-align-left u-container-style u-products-item u-repeater-item u-white u-repeater-item-1">
             <div class="u-container-layout u-similar-container u-container-layout-1"><!--product_image-->
-              <img src="{{ lecture.image.url }}" class="u-expanded-width u-image u-image-default u-product-control u-image-1"><!--/product_image--><!--product_title-->
+              <img src="{{ lecture.get_image_url }}" class="u-expanded-width u-image u-image-default u-product-control u-image-1"><!--/product_image--><!--product_title-->
               <h4 class="u-product-control u-text u-text-1">
                 <a class="u-product-title-link" href="#"><!--product_title_content-->{{ lecture.name }}<!--/product_title_content--></a>
               </h4><!--/product_title--><!--product_content-->

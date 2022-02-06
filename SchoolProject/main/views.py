@@ -213,7 +213,7 @@ def logout_user(request):
 
 def install_file(request, file_path):
     try:
-        return FileResponse(open(os.path.join(settings.MEDIA_ROOT, file_path),'rb'))
+        return FileResponse(open(file_path,'rb'))
     except:
         messages.add_message(request, messages.ERROR, 'Не удается найти файл.')
         return redirect('home')
@@ -233,6 +233,7 @@ def create_sign(sign, sign_image, password, sign_line, path):
     except:
         return False
 
+
 def sign_contract(contract_path, sch_rep_1, sch_rep_2):
     try:
         # Получаем строки подписей
@@ -251,6 +252,6 @@ def sign_contract(contract_path, sch_rep_1, sch_rep_2):
         result = create_sign(sch_rep_2.school.sign, sch_rep_2.school.sign_image, sch_rep_2.school.sign_password, 
                              signatureLine4, contract_path)
 
-        return result, contract_path
+        return result, os.path.relpath(contract_path, start=settings.MEDIA_ROOT)
     except:
         return False, None

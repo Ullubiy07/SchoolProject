@@ -1,4 +1,5 @@
 {% extends 'main/list.html' %}
+{% load static %}
 
 {% block list %}
 {% if mode == 'Владелец' %}
@@ -16,14 +17,14 @@
 
       {% if mode == 'Владелец' %}
         <a href="{% url 'add_equip' %}">Добавить оборудование</a>
-        <a href="{% url 'install_file' file_path='ScheduleTemplate.xlsx' %}">Скачать шаблон расписания оборудования</a>
+        <a href="{% static 'main/other/ScheduleTemplate.xlsx' %}">Скачать шаблон расписания оборудования</a>
       {% endif %}
       <br>
       <div class="u-repeater u-repeater-1"><!--product_item-->
         {% for equip in equip_list %}
           <div class="u-align-left u-container-style u-products-item u-repeater-item u-white u-repeater-item-1">
             <div class="u-container-layout u-similar-container u-container-layout-1"><!--product_image-->
-              <img src="{{ equip.image.url }}" class="u-expanded-width u-image u-image-default u-product-control u-image-1"><!--/product_image--><!--product_title-->
+              <img src="{{ equip.get_image_url }}" class="u-expanded-width u-image u-image-default u-product-control u-image-1"><!--/product_image--><!--product_title-->
               <h4 class="u-product-control u-text u-text-1">
                 <a class="u-product-title-link" href="#"><!--product_title_content-->{{ equip.name }}<!--/product_title_content--></a>
               </h4><!--/product_title--><!--product_content-->

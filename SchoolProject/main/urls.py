@@ -14,5 +14,5 @@ urlpatterns = [
     path('change_sch_rep_sign/', ChangeSchRepSign.as_view(), name='change_sch_rep_sign'),
     path('change_school_data/', ChangeSchoolData.as_view(), name='change_school_data'),
 
-    path("install_file/<str:file_path>/", install_file, name="install_file"),
+    path('install_file/<path:file_path>/', install_file, name="install_file"),
 ]

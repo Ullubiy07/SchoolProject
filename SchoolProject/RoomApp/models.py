@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models.fields.related import ForeignKey
 from django.urls import reverse
 from main.models import School, Category, Interval, SchRep
+from django.templatetags.static import static
 import datetime
 
 class Room(models.Model):
@@ -13,7 +14,7 @@ class Room(models.Model):
     owner = models.ForeignKey(School, on_delete=models.CASCADE, verbose_name="Владелец")
     category = models.ForeignKey(Category, on_delete=models.SET_DEFAULT, default="Без категории", verbose_name="Категория")
     description = models.TextField(max_length=1000, default="Описания нет", verbose_name="Описание")
-    image = models.ImageField(upload_to="room_photos", verbose_name="Картинка", default="default_image.jpg")
+    image = models.ImageField(upload_to="room_photos", verbose_name="Картинка", null=True, blank=True)
     schedule = models.JSONField(verbose_name="Расписание", default=dict)
 
     def __str__(self):
@@ -21,6 +22,11 @@ class Room(models.Model):
 
     def get_absolute_url(self):
         return reverse('room', kwargs={'room_id': self.pk})
+
+    def get_image_url(self):
+        if self.image:
+            return self.image.url
+        return static('main\img\default_image.jpg')
 
     def get_quantity_on_interval(self, begin, end):
         room_booking_list = RoomBooking.objects.filter(room_id=self.pk)
