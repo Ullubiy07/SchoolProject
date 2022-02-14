@@ -247,11 +247,12 @@ def sign_contract(contract_path, sch_rep_1, sch_rep_2):
         # Подписываем
         result = create_sign(sch_rep_1.sign, sch_rep_1.sign_image, sch_rep_1.sign_password, signatureLine1, contract_path)
         result = create_sign(sch_rep_1.school.sign, sch_rep_1.school.sign_image, sch_rep_1.school.sign_password, 
-                             signatureLine2, contract_path)
+                                signatureLine2, contract_path)
         result = create_sign(sch_rep_2.sign, sch_rep_2.sign_image, sch_rep_2.sign_password, signatureLine3, contract_path)
         result = create_sign(sch_rep_2.school.sign, sch_rep_2.school.sign_image, sch_rep_2.school.sign_password, 
-                             signatureLine4, contract_path)
+                                signatureLine4, contract_path)
 
         return result, os.path.relpath(contract_path, start=settings.MEDIA_ROOT)
     except:
         return False, None
+

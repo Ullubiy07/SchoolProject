@@ -6,7 +6,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib import messages
 from docxtpl import DocxTemplate
 from django.conf import settings
-from django.templatetags.static import static
 import os
 
 from .forms import *
@@ -18,14 +17,18 @@ from main.views import sign_contract, generate_random_string
 
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
-def render_contract(sch_rep_1, room_query):
+def render_contract(sch_rep_1, room_query, equip_booking_id):
     try:
-        template = os.path.join(settings.STATIC_ROOT, "main/other/EquipContractTemplate.docx")
+        template = os.path.join(settings.STATIC_ROOT, "main/other/ContractTemplate.docx")
 
         # Генерируем название файла
         contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
         while os.path.exists(contract_path):
             contract_path = os.path.join(settings.MEDIA_ROOT, f"contracts/contract-{generate_random_string(10)}.docx")
+
+        # Создаем директорию, если ее нет
+        if not os.path.exists(os.path.join(settings.MEDIA_ROOT, 'contracts')):
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, 'contracts'))
 
         full_name_1 = sch_rep_1.user.get_full_name()
         if full_name_1 == '':
@@ -35,11 +38,12 @@ def render_contract(sch_rep_1, room_query):
             full_name_2 = "имя и фамилия не указаны"
         
         doc = DocxTemplate(template)
-        context = {'sch_rep_1': full_name_1, 'sch_rep_2': full_name_2,
+        context = {'id': equip_booking_id, 'current_date': datetime.date.today(), 
+                    'sch_rep_1': full_name_1, 'sch_rep_2': full_name_2,
                     'school_1': room_query.room.owner, 'school_2': room_query.sender,
-                    'room': room_query.room, 'quantity': room_query.quantity,
+                    'name': room_query.room.name, 'quantity': room_query.quantity,
                     'booking_begin': room_query.booking_begin, 'booking_end': room_query.booking_end,
-                    'size': room_query.room.size, 'address': room_query.room.address}
+                    'type': 'помещение'}
         doc.render(context)
         doc.save(contract_path)
 
@@ -272,14 +276,15 @@ class RespondRoomQuery(PermissionRequiredMixin, DataMixin, DeleteView):
             room_query = RoomQuery.objects.get(pk = kwargs["query_id"])
             possible_quantity = room_query.room.get_quantity_on_interval(room_query.booking_begin, room_query.booking_end)
             if possible_quantity >= room_query.quantity:
-                contract = render_contract(request.user.schrep, room_query)
+                room_booking = RoomBooking.objects.create(room=room_query.room, quantity=room_query.quantity,
+                                                          booking_begin=room_query.booking_begin,
+                                                          booking_end=room_query.booking_end,
+                                                          temp_owner=room_query.sender)
+                contract = render_contract(request.user.schrep, room_query, room_booking.pk)
                 result, contract = sign_contract(contract, request.user.schrep, room_query.sch_rep)
                 if contract:
-                    RoomBooking.objects.create(room=room_query.room, quantity=room_query.quantity,
-                                                booking_begin=room_query.booking_begin,
-                                                booking_end=room_query.booking_end,
-                                                temp_owner=room_query.sender, 
-                                                contract=contract)
+                    room_booking.contract = contract
+                    room_booking.save()
                     if result:
                         messages.add_message(request, messages.SUCCESS, 'Вы приняли запрос.')
                     else:
