@@ -135,7 +135,7 @@ class EquipBookingList(LoginRequiredMixin, DataMixin, ListView):
                 {"type": "text", "text": equip_booking.quantity},
                 {"type": "text", "text": equip_booking.booking_begin},
                 {"type": "text", "text": equip_booking.booking_end},
-                {"type": "link", "text": "Договор", "link": reverse("install_file", kwargs={'file_path': equip_booking.contract.path})},
+                {"type": "link", "text": "Договор", "link": equip_booking.contract.url}
             ])
         context["table"] = table
         context["title_text"] = f"Список бронирования оборудования {equip.name}"
@@ -164,12 +164,13 @@ class MyEquipBookingList(PermissionRequiredMixin, DataMixin, ListView):
         c_def = self.get_user_context(title='Бронирования школы')
         table = []
         for equip_booking in context["equip_booking_list"]:
+            print("A", equip_booking.contract.url)
             table.append([
                 {"type": "link", "text": equip_booking.equip.name, "link": reverse("equip", kwargs={'equip_id': equip_booking.equip.pk})},
                 {"type": "text", "text": equip_booking.quantity},
                 {"type": "text", "text": equip_booking.booking_begin},
                 {"type": "text", "text": equip_booking.booking_end},
-                {"type": "link", "text": "Договор", "link": reverse("install_file", kwargs={'file_path': equip_booking.contract.path})},
+                {"type": "link", "text": "Договор", "link": equip_booking.contract.url},
             ])
         context["table"] = table
         context["title_text"] = f"Список оборудования, забронированного вашей школой"
@@ -272,16 +273,16 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
     
     def post(self, request, *args, **kwargs):
         if "Accept" in request.POST:
-            equip_query = EquipQuery.objects.get(pk = kwargs["query_id"])
-            possible_quantity = equip_query.equip.get_quantity_on_interval(equip_query.booking_begin, equip_query.booking_end)
-            if possible_quantity >= equip_query.quantity:
-                equip_booking = EquipBooking.objects.create(equip=equip_query.equip, quantity=equip_query.quantity,
-                                                            booking_begin=equip_query.booking_begin,
-                                                            booking_end=equip_query.booking_end,
-                                                            temp_owner=equip_query.sender)
-                contract = render_contract(request.user.schrep, equip_query, equip_booking.pk)
-                result, contract = sign_contract(contract, request.user.schrep, equip_query.sch_rep)
-                if contract:
+            try:
+                equip_query = EquipQuery.objects.get(pk = kwargs["query_id"])
+                possible_quantity = equip_query.equip.get_quantity_on_interval(equip_query.booking_begin, equip_query.booking_end)
+                if possible_quantity >= equip_query.quantity:
+                    equip_booking = EquipBooking.objects.create(equip=equip_query.equip, quantity=equip_query.quantity,
+                                                                booking_begin=equip_query.booking_begin,
+                                                                booking_end=equip_query.booking_end,
+                                                                temp_owner=equip_query.sender)
+                    contract = render_contract(request.user.schrep, equip_query, equip_booking.pk)
+                    result, contract = sign_contract(contract, request.user.schrep, equip_query.sch_rep)
                     equip_booking.contract = contract
                     equip_booking.save()
                     if result:
@@ -290,10 +291,11 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                         messages.add_message(request, messages.WARNING, 
                         'Вы приняли запрос, однако некоторые подписи не могут быть обработаны. Проверьте договор.')
                 else:
-                    messages.add_message(request, messages.ERROR, 'Произошла ошибка при подписании документа. Проверьте подписи.')
-            else:
-                messages.add_message(request, messages.WARNING, 
-                'Вы не можете принять запрос, т.к оборудования не хватает. Запрос был автоматически отклонен.')
+                    messages.add_message(request, messages.WARNING, 
+                    'Вы не можете принять запрос, т.к оборудования не хватает. Запрос был автоматически отклонен.')
+            except:
+                messages.add_message(request, messages.ERROR, 'Произошла ошибка при подписании документа. Проверьте подписи.')
+                return super().post(request, args, kwargs)
         else:
             messages.add_message(request, messages.ERROR, 'Вы отклонили запрос.')
         return super().post(request, args, kwargs)

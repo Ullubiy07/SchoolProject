@@ -59,14 +59,16 @@ class DataMixin:
 
         user_menu = []
         for elem in main_menu:
+            cur_elem = elem.copy()
             if access_level in elem["access_levels"]:
                 if "submenu" in elem:
                     submenu = []
                     for sub_elem in elem["submenu"]:
                         if access_level in sub_elem["access_levels"]:
                             submenu.append(sub_elem)
-                    elem["submenu"] = submenu
-                user_menu.append(elem)
+                    cur_elem["submenu"] = submenu
+                user_menu.append(cur_elem)
+            print(elem == cur_elem)
 
         context['main_menu'] = user_menu
 
