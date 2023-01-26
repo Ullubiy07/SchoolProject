@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  app:
+    <<: &app
+      image: app:development
+      build:
+        context: .
+        dockerfile: ./docker/backend/Dockerfile
+        target: development_build
+        args:
+          DJANGO_ENV: development
+        cache_from:
+#           - "resources:development"
+#           - "resources:latest"
+          - "*"
+      volumes:
+        - media:/code/media/
+        - ./backend/:/code
+      env_file:
+        - ./config/backend/.env
+      depends_on:
+        - db
+      networks:
+        - backend-network
+    command: python -Wd manage.py runserver 0.0.0.0:8000  # sleep infinity
+
+  db:
+    image: postgres:13.4-alpine
+    volumes:
+      - dev_db_data:/var/lib/postgresql/data/
+      - dev_db_data_backups:/backups
+    env_file:
+      - ./config/db/.env
+    networks:
+      - backend-network
+      - db-network
+
+#   cache:
+#     image: redis:6.2.5-alpine3.14
+#     env_file:
+#       - ./config/env/db/.env
+#     networks:
+#       - backend-network
+
+#   storage:
+#     image: minio/minio:latest
+#     command: server /data --console-address ":9001"
+#     volumes:
+#       - dev_storage_data:/data:z
+#     env_file:
+#       - ./config/env/storage/.env
+#     networks:
+#       - backend-network
+#       - proxy-network
+#       - storage-network
+#
+#   storage-client:
+#     build:
+#       context: .
+#       dockerfile: ./docker/mc/Dockerfile
+#     env_file:
+#       - ./config/env/mc/.env
+#     depends_on:
+#       - storage
+#     networks:
+#       - storage-network
+
+#   proxy:
+#     build:
+#       context: .
+#       dockerfile: ./docker/nginx/Dockerfile
+#       args:
+#         ENABLED_MODULES: brotli
+#     command: nginx
+#     volumes:
+#       - ./config/nginx/development/:/etc/nginx/:z
+#     depends_on:
+#       - backend
+#       - storage
+#     networks:
+#       - proxy-network
+
+networks:
+  backend-network:
+  db-network:
+
+# secrets:
+#   app-admin:
+#     file: ./config/backend/admin.env
+
+volumes:
+  media: {}
+  dev_db_data: {}
+  dev_db_data_backups: {}

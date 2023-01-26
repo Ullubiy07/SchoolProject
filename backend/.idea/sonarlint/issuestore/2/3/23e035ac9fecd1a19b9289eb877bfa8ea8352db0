@@ -1,0 +1,17 @@
+
+qpython:S1192S"YDefine a constant instead of duplicating this literal "ĞĞ±Ğ¾Ñ€ÑƒĞ´Ğ¾Ğ²Ğ°Ğ½Ğ¸Ğµ" 3 times.(ÕÔø‰
+npython:S1192T"VDefine a constant instead of duplicating this literal "ĞšĞ¾Ğ½ĞµÑ† Ğ±Ñ€Ğ¾Ğ½Ğ¸" 4 times.(­×Ó
+ppython:S1192T"XDefine a constant instead of duplicating this literal "ĞĞ°Ñ‡Ğ°Ğ»Ğ¾ Ğ±Ñ€Ğ¾Ğ½Ğ¸" 4 times.(­×Ó
+hpython:S1192Ë"ODefine a constant instead of duplicating this literal 'main/form.html' 6 times.(ãëĞÖ
+hpython:S1192”"ODefine a constant instead of duplicating this literal "Ğ”Ğ¾Ğ³Ğ¾Ğ²Ğ¾Ñ€" 4 times.(‹ÇÖí
+npython:S1192"PDefine a constant instead of duplicating this literal 'main/table.html' 3 times.(ãÊ€Òüÿÿÿÿ
+mpython:S1192T"UDefine a constant instead of duplicating this literal "ĞšĞ¾Ğ»Ğ¸Ñ‡ĞµÑÑ‚Ğ²Ğ¾" 5 times.(­×Ó
+^python:S2208"GImport only needed names or import the module and then use its members.(œÁƒ
+dpython:S2208"GImport only needed names or import the module and then use its members.(½Ãêùÿÿÿÿÿ
+dpython:S2208"GImport only needed names or import the module and then use its members.(ÅÙï„úÿÿÿÿ
+kpython:S2208"GImport only needed names or import the module and then use its members.(ØùŸÎûÿÿÿÿ8•ªŞÎŞ0
+kpython:S2208"GImport only needed names or import the module and then use its members.(Ù‹”‡ıÿÿÿÿ8•ªŞÎŞ0
+[python:S57546"<Specify an exception class to catch or reraise the exception(ˆÊÉ·8•ªŞÎŞ0
+Qpython:S5727v"4Remove this identity check; it will always be False.(¿Õó¦ùÿÿÿÿ
+\python:S5754¾"<Specify an exception class to catch or reraise the exception(ˆÊÉ·8–ªŞÎŞ0
+python:S1871İ"cEither merge this branch with the identical one on line "347" or change one of the implementations.(âÕû–øÿÿÿÿ
