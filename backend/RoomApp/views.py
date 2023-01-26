@@ -288,7 +288,7 @@ class RespondRoomQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                     room_query.booking_end
                 )
                 if possible_quantity >= room_query.quantity:
-                    room_booking = RoomBooking(
+                    room_booking = RoomBooking.objects.create(
                         room=room_query.room,
                         quantity=room_query.quantity,
                         booking_begin=room_query.booking_begin,

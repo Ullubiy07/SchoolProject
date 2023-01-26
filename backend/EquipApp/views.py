@@ -296,7 +296,7 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                     equip_query.booking_end
                 )
                 if possible_quantity >= equip_query.quantity:
-                    equip_booking = EquipBooking(
+                    equip_booking = EquipBooking.objects.create(
                         equip=equip_query.equip,
                         quantity=equip_query.quantity,
                         booking_begin=equip_query.booking_begin,
@@ -310,6 +310,7 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                         equip_booking.save()
                         messages.add_message(request, messages.SUCCESS, 'Вы приняли запрос.')
                     else:
+                        equip_booking.delete()
                         messages.add_message(request, messages.WARNING,
                                              'Вы приняли запрос, однако некоторые подписи не могут быть обработаны. Проверьте договор.')
                 else:
