@@ -107,7 +107,7 @@ class RoomBooking(models.Model):
 
 class RoomQuery(models.Model):
     sender = models.ForeignKey(School, on_delete=models.CASCADE, verbose_name="Отправитель")
-    supply_manager = ForeignKey(SupplyManager, on_delete=models.CASCADE, verbose_name="Завхоз")
+    supply_manager = ForeignKey(SupplyManager, on_delete=models.CASCADE, verbose_name="Завхоз", blank=True, null=True)
     room = ForeignKey("Room", on_delete=models.CASCADE, verbose_name="Помещение")
     quantity = models.SmallIntegerField(verbose_name="Количество")
     booking_begin = models.DateTimeField(verbose_name="Начало брони")
