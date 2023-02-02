@@ -17,7 +17,6 @@ class SignatureSpec:
 def _extract_document_id(response: Response):
     body = response.json()
 
-    print(body)
     return body["document_id"]
 
 
