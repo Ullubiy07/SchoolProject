@@ -1,47 +1,48 @@
 from django.http import HttpRequest
 from django.http.response import HttpResponseForbidden
-from .models import SchRep, Teacher
+from .models import SchRep, Teacher, SupplyManager
 
 """
 Уровни доступа:
     0 - Не авторизован;
     1 - Авторизован;
     2 - Учитель;
-    3 - Школьный представитель;
+    3 - Завхоз
+    4 - Школьный представитель;
 """
 
 main_menu = [
-    {"title": "Главная", "url_name": "home", "access_levels": [0, 1, 2, 3]},
+    {"title": "Главная", "url_name": "home", "access_levels": [0, 1, 2, 3, 4]},
 
     {"title": "Вход/Регистрация", "access_levels": [0], "url_name": None,
      "submenu": [{"title": "Вход", "access_levels": [0], "url_name": "login"},
                  {"title": "Регистрация", "access_levels": [0], "url_name": "register"}
                  ]},
 
-    {"title": "Каталоги", "access_levels": [1, 2, 3], "url_name": None,
-     "submenu": [{"title": "Оборудование", "access_levels": [1, 2, 3], "url_name": "equip_list"},
-                 {"title": "Помещение", "access_levels": [1, 2, 3], "url_name": "room_list"},
-                 {"title": "Лекции", "access_levels": [1, 2, 3], "url_name": "lecture_list"}
+    {"title": "Каталоги", "access_levels": [1, 2, 3, 4], "url_name": None,
+     "submenu": [{"title": "Оборудование", "access_levels": [1, 2, 3, 4], "url_name": "equip_list"},
+                 {"title": "Помещение", "access_levels": [1, 2, 3, 4], "url_name": "room_list"},
+                 {"title": "Лекции", "access_levels": [1, 2, 3, 4], "url_name": "lecture_list"}
                  ]},
 
-    {"title": "Запросы", "access_levels": [3], "url_name": None,
-     "submenu": [{"title": "Оборудование", "access_levels": [3], "url_name": "equip_query_list"},
-                 {"title": "Помещение", "access_levels": [3], "url_name": "room_query_list"}
+    {"title": "Запросы", "access_levels": [3, 4], "url_name": None,
+     "submenu": [{"title": "Оборудование", "access_levels": [3, 4], "url_name": "equip_query_list"},
+                 {"title": "Помещение", "access_levels": [3, 4], "url_name": "room_query_list"}
                  ]},
 
-    {"title": "Бронирования школы", "access_levels": [3], "url_name": None,
-     "submenu": [{"title": "Оборудование", "access_levels": [3], "url_name": "my_equip_booking_list"},
-                 {"title": "Помещение", "access_levels": [3], "url_name": "my_room_booking_list"}
+    {"title": "Бронирования школы", "access_levels": [3, 4], "url_name": None,
+     "submenu": [{"title": "Оборудование", "access_levels": [3, 4], "url_name": "my_equip_booking_list"},
+                 {"title": "Помещение", "access_levels": [3, 4], "url_name": "my_room_booking_list"}
                  ]},
 
-    {"title": "Личный кабинет", "access_levels": [1, 2, 3], "url_name": None,
-     "submenu": [{"title": "Изменить данные аккаунта", "access_levels": [1, 2, 3], "url_name": "edit_user_data"},
-                 {"title": "Изменить пароль", "access_levels": [1, 2, 3], "url_name": "change_password"},
+    {"title": "Личный кабинет", "access_levels": [1, 2, 3, 4], "url_name": None,
+     "submenu": [{"title": "Изменить данные аккаунта", "access_levels": [1, 2, 3, 4], "url_name": "edit_user_data"},
+                 {"title": "Изменить пароль", "access_levels": [1, 2, 3, 4], "url_name": "change_password"},
                  {"title": "Изменить свою подпись", "access_levels": [3], "url_name": "change_sch_rep_sign"},
-                 {"title": "Изменить данные школы", "access_levels": [3], "url_name": "change_school_data"},
-                 {"title": "Создать аккаунт представителя", "access_levels": [3], "url_name": "create_sch_rep_user"},
-                 {"title": "Создать аккаунт учителя", "access_levels": [3], "url_name": "create_teacher"},
-                 {"title": "Выйти", "access_levels": [1, 2, 3], "url_name": "logout"}
+                 {"title": "Изменить данные школы", "access_levels": [4], "url_name": "change_school_data"},
+                 {"title": "Создать аккаунт завхоза", "access_levels": [4], "url_name": "create_supply_manager_user"},
+                 {"title": "Создать аккаунт учителя", "access_levels": [4], "url_name": "create_teacher"},
+                 {"title": "Выйти", "access_levels": [1, 2, 3, 4], "url_name": "logout"}
                  ]},
 ]
 
@@ -57,8 +58,10 @@ class DataMixin:
             access_level = 1
         if self.request.user.has_perm(Teacher.Permission):
             access_level = 2
-        if self.request.user.has_perm(SchRep.Permission):
+        if self.request.user.has_perm(SupplyManager.Permission):
             access_level = 3
+        if self.request.user.has_perm(SchRep.Permission):
+            access_level = 4
 
         user_menu = []
         for elem in main_menu:
@@ -80,10 +83,12 @@ class DataMixin:
 class OwnerPermMixin:
     def dispatch(self, request, *args, **kwargs):
         owner = self.get_owner(kwargs)
-        if not request.user.has_perm(SchRep.Permission):
-            return HttpResponseForbidden("<h1>Страница не доступна<h1>")
-        elif owner != request.user.schrep.school:
-            return HttpResponseForbidden("<h1>Страница не доступна<h1>")
+        if not request.user.has_perm(SchRep.Permission) and not request.user.has_perm(SupplyManager.Permission):
+            return HttpResponseForbidden("<h1>Страница не доступна</h1>")
+        elif request.user.has_perm(SchRep.Permission) and owner != request.user.schrep.school:
+            return HttpResponseForbidden("<h1>Страница не доступна</h1>")
+        elif request.user.has_perm(SupplyManager.Permission) and owner != request.user.supplymanager.school:
+            return HttpResponseForbidden("<h1>Страница не доступна</h1>")
         return super().dispatch(request, *args, **kwargs)
 
     def get_owner(self, kwargs):

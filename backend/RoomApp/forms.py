@@ -6,8 +6,10 @@ import openpyxl
 
 common_class = "u-border-1 u-border-grey-30 u-input u-input-rectangle u-white"
 
+
 class RoomForm(forms.ModelForm):
-    schedule_file = forms.FileField(label="Расписание", required=False, widget=forms.FileInput(attrs={'class': common_class}))
+    schedule_file = forms.FileField(label="Расписание", required=False,
+                                    widget=forms.FileInput(attrs={'class': common_class}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -16,23 +18,23 @@ class RoomForm(forms.ModelForm):
     class Meta:
         model = Room
         fields = ('name', 'quantity', 'category', 'size', 'address', 'description', 'image')
-        
+
         widgets = {
-            'name': forms.TextInput(attrs={"class": common_class, 
+            'name': forms.TextInput(attrs={"class": common_class,
                                            "placeholder": "Введите название помещения"}),
-            'address': forms.TextInput(attrs={"class": common_class, 
+            'address': forms.TextInput(attrs={"class": common_class,
                                               "placeholder": "Введите адрес помещения"}),
             'quantity': forms.NumberInput(attrs={"class": common_class,
-                                               "placeholder": "Введите количество помещения"}),
+                                                 "placeholder": "Введите количество помещения"}),
             'size': forms.NumberInput(attrs={"class": common_class,
                                              "placeholder": "Введите размер помещения (м²)"}),
-            'description': forms.Textarea(attrs={"class": common_class, 
-                                                 "cols": 60, 
+            'description': forms.Textarea(attrs={"class": common_class,
+                                                 "cols": 60,
                                                  "rows": 10}),
             'category': forms.Select(attrs={"class": common_class}),
-            'image': forms.FileInput(attrs={"class": common_class}),                
+            'image': forms.FileInput(attrs={"class": common_class}),
         }
-    
+
     def clean_quantity(self):
         quantity = self.cleaned_data["quantity"]
         if quantity > 10000:
@@ -61,9 +63,9 @@ class RoomForm(forms.ModelForm):
             week_schedule = {0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []}
             ws = openpyxl.load_workbook(schedule_file).get_sheet_by_name("Лист1")
             for i in range(6, 107):
-                row = ws[f"A{i}" : f"H{i}"][0]
+                row = ws[f"A{i}": f"H{i}"][0]
                 if row[0].value is None:
-                    break               
+                    break
                 try:
                     interval = row[0].value.split(" - ")
                     begin = interval[0].split(":")
@@ -85,20 +87,23 @@ class RoomForm(forms.ModelForm):
 
         return week_schedule
 
+
 class RoomQueryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         if "room" in kwargs["initial"]:
             self.room = kwargs["initial"]["room"]
         super().__init__(*args, **kwargs)
-    
+
     class Meta:
         model = RoomQuery
         fields = ('booking_begin', 'booking_end', 'quantity')
-        
+
         widgets = {
             'quantity': forms.NumberInput(attrs={"class": common_class, "type": "number"}),
-            'booking_begin': forms.DateTimeInput(attrs={"class": common_class, "type": "datetime", "placeholder": "21.01.2022 17:47"}),
-            'booking_end': forms.DateTimeInput(attrs={"class": common_class, "type": "datetime", "placeholder": "21.01.2022 17:47"}),  
+            'booking_begin': forms.DateTimeInput(
+                attrs={"class": common_class, "type": "datetime", "placeholder": "21.01.2022 17:47"}),
+            'booking_end': forms.DateTimeInput(
+                attrs={"class": common_class, "type": "datetime", "placeholder": "21.01.2022 17:47"}),
         }
 
     def clean_booking_begin(self):
@@ -106,8 +111,9 @@ class RoomQueryForm(forms.ModelForm):
         if booking_begin < datetime.datetime.now():
             raise ValidationError("Дата и время начала бронирования должны быть позже текущей даты и времени")
         if booking_begin > (datetime.datetime.now() + datetime.timedelta(days=90)):
-            raise ValidationError("Начало бронирования интервала не должно быть позже сегодняшней даты больше чем на 90 дней")
-        
+            raise ValidationError(
+                "Начало бронирования интервала не должно быть позже сегодняшней даты больше чем на 90 дней")
+
         return booking_begin
 
     def clean_booking_end(self):
@@ -119,17 +125,18 @@ class RoomQueryForm(forms.ModelForm):
         if "booking_begin" in self.cleaned_data:
             booking_begin = self.cleaned_data["booking_begin"]
             if booking_begin > booking_end:
-                raise ValidationError("Дата и время конца бронирования должны быть позже даты и времени начала бронирования")
+                raise ValidationError(
+                    "Дата и время конца бронирования должны быть позже даты и времени начала бронирования")
             if (booking_end - booking_begin).days > 90:
                 raise ValidationError("Интервал бронирования не должен превышать 90 дней")
-        
+
         return booking_end
 
-    def clean_quantity(self): 
+    def clean_quantity(self):
         quantity = self.cleaned_data["quantity"]
         if quantity > 10000:
             raise ValidationError("Слишком большое количество запрашиваемого помещения. Уменьшите количество.")
-        
+
         if quantity <= 0:
             raise ValidationError("Количество должно быть больше нуля")
 
@@ -139,6 +146,7 @@ class RoomQueryForm(forms.ModelForm):
             room = self.room
             possible_quantity = room.get_quantity_on_interval(booking_begin, booking_end)
             if possible_quantity < quantity:
-                raise ValidationError(f"Помещения на данный период времени не хватает. На данный период доступно {possible_quantity} шт.")
+                raise ValidationError(
+                    f"Помещения на данный период времени не хватает. На данный период доступно {possible_quantity} шт.")
 
         return quantity

@@ -1,11 +1,12 @@
+from django.core.exceptions import PermissionDenied
 from django.http.response import HttpResponseNotFound
 from django.urls.base import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import *
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from docxtpl import DocxTemplate
 from django.conf import settings
+from braces.views import MultiplePermissionsRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin
 import os
 
 from .forms import *
@@ -18,7 +19,7 @@ from main.views import sign_contract, generate_random_string
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 
-def render_contract(sch_rep_1, room_query, room_booking_id):
+def render_contract(supply_manager, room_query, room_booking_id):
     try:
         template = os.path.join(settings.STATIC_ROOT, "main/other/ContractTemplate.docx")
 
@@ -27,10 +28,10 @@ def render_contract(sch_rep_1, room_query, room_booking_id):
         if not os.path.exists(os.path.join(settings.MEDIA_ROOT, 'contracts')):
             os.makedirs(os.path.join(settings.MEDIA_ROOT, 'contracts'))
 
-        full_name_1 = sch_rep_1.user.get_full_name()
+        full_name_1 = supply_manager.user.get_full_name()
         if full_name_1 == '':
             full_name_1 = "имя и фамилия не указаны"
-        full_name_2 = room_query.sch_rep.user.get_full_name()
+        full_name_2 = room_query.supply_manager.user.get_full_name()
         if full_name_2 == '':
             full_name_2 = "имя и фамилия не указаны"
 
@@ -50,8 +51,10 @@ def render_contract(sch_rep_1, room_query, room_booking_id):
         return
 
 
-class RoomQueryList(PermissionRequiredMixin, DataMixin, ListView):
-    permission_required = SchRep.Permission
+class RoomQueryList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
+    permissions = {
+        "any": (SchRep.Permission, SupplyManager.Permission)
+    }
     template_name = "main/table.html"
     model = RoomQuery
     context_object_name = 'room_query_list'
@@ -60,52 +63,88 @@ class RoomQueryList(PermissionRequiredMixin, DataMixin, ListView):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title='Список запросов')
 
+        user = self.request.user
+
         table = []
         for room_query in context["room_query_list"]:
-            table.append([
+            tables = [
                 {"type": "text", "text": room_query.sender},
-                {"type": "link", "text": "Ответить", "link": room_query.get_respond_url()},
                 {"type": "link", "text": room_query.room.name, "link": room_query.room.get_absolute_url()},
                 {"type": "text", "text": room_query.quantity},
                 {"type": "text", "text": room_query.booking_begin},
                 {"type": "text", "text": room_query.booking_end},
-            ])
+            ]
+
+            if user.has_perm(SupplyManager.Permission):
+                tables.insert(1, {"type": "link", "text": "Ответить", "link": room_query.get_respond_url()})
+
+            table.append(tables)
         context["table"] = table
         context["title_text"] = "Запросы к вашей школе"
         context["link"] = reverse("my_room_query_list")
         context["link_text"] = "Посмотреть запросы от моей школы"
         if table:
-            context["table_head"] = ["Отправитель", "Ответить", "Помещение",
-                                     "Количество", "Начало брони", "Конец брони"]
+            table_head = [
+                "Отправитель", "Помещение",
+                "Количество", "Начало брони", "Конец брони"
+            ]
+            if user.has_perm(SupplyManager.Permission):
+                table_head.insert(1, "Ответить")
+            context["table_head"] = table_head
         else:
             context["text"] = "К вашей школе запросы не посылались"
 
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        room_set = Room.objects.filter(owner=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            room_set = Room.objects.filter(owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            room_set = Room.objects.filter(owner=user.supplymanager.school)
+        else:
+            raise PermissionDenied()
         return RoomQuery.objects.filter(room__in=room_set)
 
 
 class MyRoomQueryList(RoomQueryList):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
+        user = self.request.user
 
-        context["table_head"] = ["Получатель", "Изменить", "Удалить", "Помещение",
-                                 "Количество", "Начало брони", "Конец брони"]
+        table_head = [
+            "Получатель", "Помещение",
+            "Количество", "Начало брони", "Конец брони"
+        ]
+
+        if user.has_perm(SupplyManager.Permission):
+            table_head.insert(1, "Изменить")
+            table_head.insert(2, "Удалить")
+
+        context["table_head"] = table_head
         table = []
         for room_query in context["room_query_list"]:
-            table.append([
+            tables = [
                 {"type": "text", "text": room_query.room.owner},
-                {"type": "link", "text": "Изменить",
-                 "link": reverse('edit_room_query', kwargs={'query_id': room_query.pk})},
-                {"type": "link", "text": "Удалить",
-                 "link": reverse('delete_room_query', kwargs={'query_id': room_query.pk})},
                 {"type": "link", "text": room_query.room.name, "link": room_query.room.get_absolute_url()},
                 {"type": "text", "text": room_query.quantity},
                 {"type": "text", "text": room_query.booking_begin},
                 {"type": "text", "text": room_query.booking_end},
-            ])
+            ]
+
+            if user.has_perm(SupplyManager.Permission):
+                tables.insert(1, {
+                    "type": "link", "text": "Изменить",
+                    "link": reverse('edit_room_query', kwargs={'query_id': room_query.pk})
+                    }
+                )
+                tables.insert(2, {
+                    "type": "link", "text": "Удалить",
+                    "link": reverse('delete_room_query', kwargs={'query_id': room_query.pk})
+                    }
+                )
+
+            table.append(tables)
         context["table"] = table
         context["title_text"] = "Запросы от вашей школы"
         context["link"] = reverse("room_query_list")
@@ -116,7 +155,12 @@ class MyRoomQueryList(RoomQueryList):
         return context
 
     def get_queryset(self):
-        return RoomQuery.objects.filter(sender=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            return RoomQuery.objects.filter(sender=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return RoomQuery.objects.filter(sender=user.supplymanager.school)
+        raise PermissionDenied()
 
 
 class RoomBookingList(LoginRequiredMixin, DataMixin, ListView):
@@ -156,8 +200,10 @@ class RoomBookingList(LoginRequiredMixin, DataMixin, ListView):
         return RoomBooking.objects.filter(room_id=room_id)
 
 
-class MyRoomBookingList(PermissionRequiredMixin, DataMixin, ListView):
-    permission_required = SchRep.Permission
+class MyRoomBookingList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
+    permissions = {
+        "any": (SchRep.Permission, SupplyManager.Permission)
+    }
     model = RoomBooking
     template_name = 'main/table.html'
     context_object_name = 'room_booking_list'
@@ -186,7 +232,12 @@ class MyRoomBookingList(PermissionRequiredMixin, DataMixin, ListView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        return RoomBooking.objects.filter(temp_owner=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            return RoomBooking.objects.filter(temp_owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return RoomBooking.objects.filter(temp_owner=user.supplymanager.school)
+        raise PermissionDenied()
 
 
 class RoomSchedule(LoginRequiredMixin, DataMixin, DetailView):
@@ -232,7 +283,7 @@ class RoomList(LoginRequiredMixin, DataMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        if not user.has_perm(SchRep.Permission):
+        if not user.has_perm(SupplyManager.Permission) and not user.has_perm(SchRep.Permission):
             context["mode"] = "Просмотр"
         else:
             context["mode"] = self.mode
@@ -243,12 +294,16 @@ class RoomList(LoginRequiredMixin, DataMixin, ListView):
         user = self.request.user
         if user.has_perm(SchRep.Permission):
             return Room.objects.exclude(owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return Room.objects.exclude(owner=user.supplymanager.school)
         else:
             return Room.objects.all()
 
 
-class MyRoomList(PermissionRequiredMixin, RoomList):
-    permission_required = SchRep.Permission
+class MyRoomList(MultiplePermissionsRequiredMixin, RoomList):
+    permissions = {
+        "any": (SchRep.Permission, SupplyManager.Permission)
+    }
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
@@ -260,11 +315,16 @@ class MyRoomList(PermissionRequiredMixin, RoomList):
         return context
 
     def get_queryset(self):
-        return Room.objects.filter(owner=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            return Room.objects.filter(owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return Room.objects.filter(owner=user.supplymanager.school)
+        raise PermissionDenied()
 
 
 class RespondRoomQuery(PermissionRequiredMixin, DataMixin, DeleteView):
-    permission_required = SchRep.Permission
+    permission_required = SupplyManager.Permission
     model = Room
     template_name = 'main/respond_query.html'
     pk_url_kwarg = "query_id"
@@ -276,7 +336,7 @@ class RespondRoomQuery(PermissionRequiredMixin, DataMixin, DeleteView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        room_set = Room.objects.filter(owner=self.request.user.schrep.school)
+        room_set = Room.objects.filter(owner=self.request.user.supplymanager.school)
         return RoomQuery.objects.filter(room__in=room_set)
 
     def post(self, request, *args, **kwargs):
@@ -295,9 +355,9 @@ class RespondRoomQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                         booking_end=room_query.booking_end,
                         temp_owner=room_query.sender
                     )
-                    contract = render_contract(request.user.schrep, room_query, room_booking.pk)
+                    contract = render_contract(request.user.supplymanager, room_query, room_booking.pk)
                     result, contract = sign_contract(
-                        contract, request.user.schrep, room_query.sch_rep, "ContractTemplate"
+                        contract, request.user.supplymanager, room_query.supplymanager, "ContractTemplate"
                     )
                     if result:
                         room_booking.contract = contract
@@ -338,16 +398,17 @@ class AddRoomQuery(PermissionRequiredMixin, DataMixin, CreateView):
         room = get_object_or_404(Room, pk=kwargs["room_id"])
         self.initial["room"] = room
         self.room = room
-        if not request.user.has_perm(SchRep.Permission):
+        user = self.request.user
+        if not user.has_perm(SupplyManager.Permission):
             return HttpResponseNotFound("<h1>Страница не доступна<h1>")
-        elif room.owner == request.user.schrep.school:
+        elif user.has_perm(SupplyManager.Permission) and room.owner != user.supplymanager.school:
             return HttpResponseNotFound("<h1>Страница не доступна<h1>")
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.sender = self.request.user.schrep.school
-        self.object.sch_rep = self.request.user.schrep
+        self.object.sender = self.request.user.supplymanager.school
+        self.object.supply_manager = self.request.user.supplymanager
         self.object.room = self.room
         self.object.save()
         messages.add_message(self.request, messages.SUCCESS, 'Вы успешно отправили запрос.')
@@ -358,7 +419,7 @@ class AddRoomQuery(PermissionRequiredMixin, DataMixin, CreateView):
 
 
 class EditRoomQuery(RoomQueryOwnerPermMixin, DataMixin, UpdateView):
-    permission_required = SchRep.Permission
+    permission_required = (SchRep.Permission, SupplyManager.Permission)
     model = RoomQuery
     form_class = RoomQueryForm
     pk_url_kwarg = "query_id"
@@ -385,7 +446,7 @@ class EditRoomQuery(RoomQueryOwnerPermMixin, DataMixin, UpdateView):
 
 
 class DeleteRoomQuery(RoomQueryOwnerPermMixin, DataMixin, DeleteView):
-    permission_required = SchRep.Permission
+    permission_required = (SchRep.Permission, SupplyManager.Permission)
     model = RoomQuery
     pk_url_kwarg = "query_id"
     template_name = 'main/form.html'
@@ -406,7 +467,11 @@ class DeleteRoomQuery(RoomQueryOwnerPermMixin, DataMixin, DeleteView):
         return reverse("my_room_query_list")
 
 
-class ShowRoom(LoginRequiredMixin, DataMixin, DetailView):
+class ShowRoom(
+    LoginRequiredMixin,
+    DataMixin,
+    DetailView
+):
     model = Room
     template_name = "RoomApp/room_details.html"
     pk_url_kwarg = "room_id"
@@ -418,9 +483,9 @@ class ShowRoom(LoginRequiredMixin, DataMixin, DetailView):
 
         room = context["room"]
         user = self.request.user
-        if not user.has_perm(SchRep.Permission):
+        if not user.has_perm(SupplyManager.Permission):
             context["mode"] = "Просмотр"
-        elif user.schrep.school == room.owner:
+        elif user.has_perm(SupplyManager.Permission) and user.supplymanager.school == room.owner:
             context["mode"] = "Владелец"
         else:
             context['mode'] = "Действие"
@@ -430,7 +495,7 @@ class ShowRoom(LoginRequiredMixin, DataMixin, DetailView):
 
 
 class AddRoom(PermissionRequiredMixin, DataMixin, CreateView):
-    permission_required = SchRep.Permission
+    permission_required = SupplyManager.Permission
     form_class = RoomForm
     template_name = 'main/form.html'
     login_url = reverse_lazy('login')
@@ -444,7 +509,13 @@ class AddRoom(PermissionRequiredMixin, DataMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.owner = self.request.user.schrep.school
+        user = self.request.user
+
+        if user.has_perm(SupplyManager.Permission):
+            self.object.owner = self.request.user.supplymanager.school
+        else:
+            raise PermissionDenied()
+
         if form.cleaned_data["schedule_file"]:
             self.object.schedule = form.cleaned_data["schedule_file"]
         else:

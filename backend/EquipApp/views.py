@@ -1,10 +1,11 @@
 import traceback
 
+from braces.views import MultiplePermissionsRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.http.response import HttpResponseNotFound
 from django.urls.base import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import *
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from docxtpl import DocxTemplate
 from django.conf import settings
@@ -55,8 +56,10 @@ def render_contract(sch_rep_1, equip_query, equip_booking_id):
         return
 
 
-class EquipQueryList(PermissionRequiredMixin, DataMixin, ListView):
-    permission_required = SchRep.Permission
+class EquipQueryList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
+    permissions = {
+        "any": (SchRep.Permission, SupplyManager.Permission)
+    }
     template_name = "main/table.html"
     model = EquipQuery
     context_object_name = 'equip_query_list'
@@ -64,31 +67,47 @@ class EquipQueryList(PermissionRequiredMixin, DataMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title='Список запросов')
+        user = self.request.user
 
         table = []
         for equip_query in context["equip_query_list"]:
-            table.append([
+            tables = [
                 {"type": "text", "text": equip_query.sender},
-                {"type": "link", "text": "Ответить", "link": equip_query.get_respond_url()},
                 {"type": "link", "text": equip_query.equip.name, "link": equip_query.equip.get_absolute_url()},
                 {"type": "text", "text": equip_query.quantity},
                 {"type": "text", "text": equip_query.booking_begin},
                 {"type": "text", "text": equip_query.booking_end},
-            ])
+            ]
+
+            if user.has_perm(SupplyManager.Permission):
+                tables.insert(1, {"type": "link", "text": "Ответить", "link": equip_query.get_respond_url()})
+
+            table.append(tables)
         context["table"] = table
         context["title_text"] = "Запросы к вашей школе"
         context["link"] = reverse("my_equip_query_list")
         context["link_text"] = "Посмотреть запросы от моей школы"
         if table:
-            context["table_head"] = ["Отправитель", "Ответить", "Оборудование",
-                                     "Количество", "Начало брони", "Конец брони"]
+            table_head = [
+                "Отправитель", "Оборудование",
+                "Количество", "Начало брони", "Конец брони"
+            ]
+            if self.request.user.has_perm(SupplyManager.Permission):
+                table_head.insert(1, "Ответить")
+            context["table_head"] = table_head
         else:
             context["text"] = "К вашей школе запросы не посылались"
 
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        equip_set = Equipment.objects.filter(owner=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            equip_set = Equipment.objects.filter(owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            equip_set = Equipment.objects.filter(owner=user.supplymanager.school)
+        else:
+            raise PermissionDenied()
         return EquipQuery.objects.filter(equip__in=equip_set)
 
 
@@ -96,21 +115,42 @@ class MyEquipQueryList(EquipQueryList):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
 
-        context["table_head"] = ["Получатель", "Изменить", "Удалить", "Оборудование",
-                                 "Количество", "Начало брони", "Конец брони"]
+        user = self.request.user
+
+        if user.has_perm(SupplyManager.Permission):
+            context["table_head"] = [
+                "Получатель", "Изменить", "Удалить", "Оборудование",
+                "Количество", "Начало брони", "Конец брони"
+            ]
+        else:
+            context["table_head"] = [
+                "Получатель", "Оборудование",
+                "Количество", "Начало брони", "Конец брони"
+            ]
+
         table = []
         for equip_query in context["equip_query_list"]:
-            table.append([
+            tables = [
                 {"type": "text", "text": equip_query.equip.owner},
-                {"type": "link", "text": "Изменить",
-                 "link": reverse('edit_equip_query', kwargs={'query_id': equip_query.pk})},
-                {"type": "link", "text": "Удалить",
-                 "link": reverse('delete_equip_query', kwargs={'query_id': equip_query.pk})},
                 {"type": "link", "text": equip_query.equip.name, "link": equip_query.equip.get_absolute_url()},
                 {"type": "text", "text": equip_query.quantity},
                 {"type": "text", "text": equip_query.booking_begin},
                 {"type": "text", "text": equip_query.booking_end},
-            ])
+            ]
+
+            if user.has_perm(SupplyManager.Permission):
+                tables.insert(1, {
+                    "type": "link", "text": "Изменить",
+                    "link": reverse('edit_equip_query', kwargs={'query_id': equip_query.pk})
+                    }
+                )
+                tables.insert(2, {
+                    "type": "link", "text": "Удалить",
+                    "link": reverse('delete_equip_query', kwargs={'query_id': equip_query.pk})
+                    }
+                )
+
+            table.append(tables)
         context["table"] = table
         context["title_text"] = "Запросы от вашей школы"
         context["link"] = reverse("equip_query_list")
@@ -121,7 +161,13 @@ class MyEquipQueryList(EquipQueryList):
         return context
 
     def get_queryset(self):
-        return EquipQuery.objects.filter(sender=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            return EquipQuery.objects.filter(sender=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return EquipQuery.objects.filter(sender=user.supplymanager.school)
+        else:
+            raise PermissionDenied()
 
 
 class EquipBookingList(LoginRequiredMixin, DataMixin, ListView):
@@ -139,7 +185,6 @@ class EquipBookingList(LoginRequiredMixin, DataMixin, ListView):
         table = []
         equip_booking: EquipBooking
         for equip_booking in context["equip_booking_list"]:
-            print(equip_booking.contract)
             table.append([
                 {"type": "text", "text": equip_booking.temp_owner},
                 {"type": "text", "text": equip_booking.quantity},
@@ -163,8 +208,10 @@ class EquipBookingList(LoginRequiredMixin, DataMixin, ListView):
         return EquipBooking.objects.filter(equip_id=equip_id)
 
 
-class MyEquipBookingList(PermissionRequiredMixin, DataMixin, ListView):
-    permission_required = SchRep.Permission
+class MyEquipBookingList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
+    permissions = {
+        "any": (SchRep.Permission, SupplyManager.Permission)
+    }
     model = EquipBooking
     template_name = 'main/table.html'
     context_object_name = 'equip_booking_list'
@@ -193,7 +240,12 @@ class MyEquipBookingList(PermissionRequiredMixin, DataMixin, ListView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        return EquipBooking.objects.filter(temp_owner=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            return EquipBooking.objects.filter(temp_owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return EquipBooking.objects.filter(temp_owner=user.supplymanager.school)
+        raise PermissionDenied()
 
 
 class EquipSchedule(LoginRequiredMixin, DataMixin, DetailView):
@@ -240,7 +292,7 @@ class EquipList(LoginRequiredMixin, DataMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        if not user.has_perm(SchRep.Permission):
+        if not user.has_perm(SupplyManager.Permission) and not user.has_perm(SchRep.Permission):
             context["mode"] = "Просмотр"
         else:
             context["mode"] = self.mode
@@ -251,12 +303,16 @@ class EquipList(LoginRequiredMixin, DataMixin, ListView):
         user = self.request.user
         if user.has_perm(SchRep.Permission):
             return Equipment.objects.exclude(owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return Equipment.objects.exclude(owner=user.supplymanager.school)
         else:
             return Equipment.objects.all()
 
 
-class MyEquipList(PermissionRequiredMixin, EquipList):
-    permission_required = SchRep.Permission
+class MyEquipList(MultiplePermissionsRequiredMixin, EquipList):
+    permissions = {
+        "any": (SchRep.Permission, SupplyManager.Permission)
+    }
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
@@ -268,11 +324,16 @@ class MyEquipList(PermissionRequiredMixin, EquipList):
         return context
 
     def get_queryset(self):
-        return Equipment.objects.filter(owner=self.request.user.schrep.school)
+        user = self.request.user
+        if user.has_perm(SchRep.Permission):
+            return Equipment.objects.filter(owner=user.schrep.school)
+        elif user.has_perm(SupplyManager.Permission):
+            return Equipment.objects.filter(owner=user.supplymanager.school)
+        raise PermissionDenied()
 
 
 class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
-    permission_required = SchRep.Permission
+    permission_required = SupplyManager.Permission
     model = Equipment
     template_name = 'main/respond_query.html'
     pk_url_kwarg = "query_id"
@@ -284,7 +345,7 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        equip_set = Equipment.objects.filter(owner=self.request.user.schrep.school)
+        equip_set = Equipment.objects.filter(owner=self.request.user.supplymanager.school)
         return EquipQuery.objects.filter(equip__in=equip_set)
 
     def post(self, request, *args, **kwargs):
@@ -303,8 +364,17 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                         booking_end=equip_query.booking_end,
                         temp_owner=equip_query.sender
                     )
-                    contract = render_contract(request.user.schrep, equip_query, equip_booking.pk)
-                    result, contract = sign_contract(contract, request.user.schrep, equip_query.sch_rep, "ContractTemplate")
+                    contract = render_contract(
+                        request.user.supplymanager,
+                        equip_query,
+                        equip_booking.pk
+                    )
+                    result, contract = sign_contract(
+                        contract,
+                        request.user.supplymanager,
+                        equip_query.sch_rep,
+                        "ContractTemplate"
+                    )
                     if result:
                         equip_booking.contract = contract
                         equip_booking.save()
@@ -327,7 +397,7 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
 
 
 class AddEquipQuery(PermissionRequiredMixin, DataMixin, CreateView):
-    permission_required = SchRep.Permission
+    permission_required = SupplyManager.Permission
     form_class = EquipQueryForm
     template_name = 'main/form.html'
     pk_url_kwarg = "equip_id"
@@ -344,16 +414,19 @@ class AddEquipQuery(PermissionRequiredMixin, DataMixin, CreateView):
         equip = get_object_or_404(Equipment, pk=kwargs["equip_id"])
         self.initial["equip"] = equip
         self.equip = equip
-        if not request.user.has_perm(SchRep.Permission):
-            return HttpResponseNotFound("<h1>Страница не доступна<h1>")
-        elif equip.owner == request.user.schrep.school:
-            return HttpResponseNotFound("<h1>Страница не доступна<h1>")
+        if not request.user.has_perm(SupplyManager.Permission):
+            return HttpResponseNotFound("<h1>Страница не доступна</h1>")
+        elif request.user.has_perm(SupplyManager.Permission) and equip.owner == request.user.supplymanager.school:
+            return HttpResponseNotFound("<h1>Страница не доступна</h1>")
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.sender = self.request.user.schrep.school
-        self.object.sch_rep = self.request.user.schrep
+        user = self.request.user
+
+        self.object.sender = user.supplymanager.school
+        self.object.supply_manager = user.supplymanager
+
         self.object.equip = self.equip
         self.object.save()
         messages.add_message(self.request, messages.SUCCESS, 'Вы успешно отправили запрос.')
@@ -364,7 +437,7 @@ class AddEquipQuery(PermissionRequiredMixin, DataMixin, CreateView):
 
 
 class EditEquipQuery(EquipQueryOwnerPermMixin, DataMixin, UpdateView):
-    permission_required = SchRep.Permission
+    permission_required = SupplyManager.Permission
     model = EquipQuery
     form_class = EquipQueryForm
     pk_url_kwarg = "query_id"
@@ -391,7 +464,7 @@ class EditEquipQuery(EquipQueryOwnerPermMixin, DataMixin, UpdateView):
 
 
 class DeleteEquipQuery(EquipQueryOwnerPermMixin, DataMixin, DeleteView):
-    permission_required = SchRep.Permission
+    permission_required = SupplyManager.Permission
     model = EquipQuery
     pk_url_kwarg = "query_id"
     template_name = 'main/form.html'
@@ -424,9 +497,9 @@ class ShowEquip(LoginRequiredMixin, DataMixin, DetailView):
 
         equip = context["equip"]
         user = self.request.user
-        if not user.has_perm(SchRep.Permission):
+        if not user.has_perm(SupplyManager.Permission):
             context["mode"] = "Просмотр"
-        elif user.schrep.school == equip.owner:
+        elif user.has_perm(SupplyManager.Permission) and user.supplymanager.school == equip.owner:
             context["mode"] = "Владелец"
         else:
             context['mode'] = "Действие"
@@ -436,7 +509,7 @@ class ShowEquip(LoginRequiredMixin, DataMixin, DetailView):
 
 
 class AddEquip(PermissionRequiredMixin, DataMixin, CreateView):
-    permission_required = SchRep.Permission
+    permission_required = SupplyManager.Permission
     form_class = EquipForm
     template_name = 'main/form.html'
     login_url = reverse_lazy('login')
@@ -450,7 +523,8 @@ class AddEquip(PermissionRequiredMixin, DataMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.owner = self.request.user.schrep.school
+        self.object.owner = self.request.user.supplymanager.school
+
         if form.cleaned_data["schedule_file"]:
             self.object.schedule = form.cleaned_data["schedule_file"]
         else:

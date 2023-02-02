@@ -23,9 +23,9 @@ from EquipApp.models import EquipQuery, EquipBooking
 from LectureApp.models import Lecture
 from RoomApp.models import RoomBooking, RoomQuery
 from main.client import DssClient, SignatureSpec
-from main.forms import RegisterUserForm, LoginUserForm, ChangeUserDataForm, ChangePasswordForm, SchRepSignForm, \
+from main.forms import RegisterUserForm, LoginUserForm, ChangeUserDataForm, ChangePasswordForm, SupplyManagerSignForm, \
     SchoolForm
-from main.models import SchRep, Teacher
+from main.models import SchRep, Teacher, SupplyManager
 from main.utils import DataMixin
 import httpx
 
@@ -148,9 +148,9 @@ class ChangePassword(LoginRequiredMixin, DataMixin, PasswordChangeView):
         return reverse_lazy('home')
 
 
-class ChangeSchRepSign(PermissionRequiredMixin, DataMixin, UpdateView):
-    permission_required = SchRep.Permission
-    form_class = SchRepSignForm
+class ChangeSupplyManagerSign(PermissionRequiredMixin, DataMixin, UpdateView):
+    permission_required = SupplyManager.Permission
+    form_class = SupplyManagerSignForm
     template_name = 'main/form.html'
     login_url = reverse_lazy('login')
 
@@ -169,7 +169,7 @@ class ChangeSchRepSign(PermissionRequiredMixin, DataMixin, UpdateView):
         return super().form_valid(form)
 
     def get_object(self):
-        return self.request.user.schrep
+        return self.request.user.supplymanager
 
 
 class ChangeSchoolData(PermissionRequiredMixin, DataMixin, UpdateView):
@@ -196,20 +196,20 @@ class ChangeSchoolData(PermissionRequiredMixin, DataMixin, UpdateView):
         return self.request.user.schrep.school
 
 
-def create_sch_rep_user(request):
+def create_supply_manager_user(request):
     if request.user.has_perm(SchRep.Permission):
         username, password = generate_random_string(8), generate_random_string(8)
         while User.objects.filter(username=username).exists():
             username, password = generate_random_string(8), generate_random_string(8)
         user = User.objects.create_user(username=username, password=password)
-        permission = Permission.objects.get(name=SchRep.Permission)
+        permission = Permission.objects.get(name=SupplyManager.Permission)
         user.user_permissions.add(permission)
-        SchRep.objects.create(user=user, school=request.user.schrep.school)
-        group = Group.objects.get(name=SchRep.Group)
+        SupplyManager.objects.create(user=user, school=request.user.schrep.school)
+        group = Group.objects.get(name=SupplyManager.Group)
         user.groups.add(group)
         user.save()
         messages.add_message(request, messages.SUCCESS,
-                             f'Вы успешно создали аккаунт школьного представителя. Логин: {username}, Пароль: {password}.'
+                             f'Вы успешно создали аккаунт завхоза. Логин: {username}, Пароль: {password}.'
                              ' Сохраните эту информацию перед закрытием сообщения')
         return redirect('home')
     else:
@@ -290,8 +290,8 @@ def get_boxing(filename: str):
 
 def sign_contract(
         contract_path: str,
-        first_sch_rep: SchRep,
-        second_sch_rep: SchRep,
+        first_supply_manager: SupplyManager,
+        second_supply_manager: SupplyManager,
         contract_type: str
 ):
     contract_path = Path(contract_path)
@@ -303,25 +303,25 @@ def sign_contract(
     signature_specs = (
         to_signature_spec(
             name='Представитель школы-владельца',
-            credential_id=first_sch_rep.credential_id,
+            credential_id=first_supply_manager.credential_id,
             strategy_boxing="school_rep",
             boxing=boxing
         ),
         to_signature_spec(
             name='Школа-владелец',
-            credential_id=first_sch_rep.school.credential_id,
+            credential_id=first_supply_manager.school.credential_id,
             strategy_boxing="school",
             boxing=boxing
         ),
         to_signature_spec(
             name='Представитель школы-получателя',
-            credential_id=second_sch_rep.credential_id,
+            credential_id=second_supply_manager.credential_id,
             strategy_boxing="another_school_rep",
             boxing=boxing
         ),
         to_signature_spec(
             name='Школа-получатель',
-            credential_id=second_sch_rep.school.credential_id,
+            credential_id=second_supply_manager.school.credential_id,
             strategy_boxing="another_school",
             boxing=boxing
         )

@@ -57,9 +57,9 @@ class ChangeUserDataForm(UserChangeForm):
         fields = ('username', 'first_name', 'last_name', 'email')
 
 
-class SchRepSignForm(forms.ModelForm):
+class SupplyManagerSignForm(forms.ModelForm):
     class Meta:
-        model = SchRep
+        model = SupplyManager
         fields = ('credential_id', )
         widgets = {
             'credential_id': forms.TextInput(attrs={

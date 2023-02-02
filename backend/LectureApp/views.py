@@ -53,6 +53,7 @@ class MyLectureList(PermissionRequiredMixin, LectureList):
     def get_queryset(self):
         return Lecture.objects.filter(organizer=self.request.user.teacher)
 
+
 class ShowLecture(LoginRequiredMixin, DataMixin, DetailView):
     model = Lecture
     template_name = "LectureApp/lecture_details.html"
@@ -62,16 +63,17 @@ class ShowLecture(LoginRequiredMixin, DataMixin, DetailView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-       
+
         lecture = context["lecture"]
         user = self.request.user
         if user.has_perm(Teacher.Permission) and user.teacher == lecture.organizer:
             context["mode"] = "Владелец"
         else:
             context['mode'] = "Действие"
-        
+
         c_def = self.get_user_context(title=lecture.name)
         return dict(list(context.items()) + list(c_def.items()))
+
 
 class EditLecture(LectureOwnerPermMixin, DataMixin, UpdateView):
     model = Lecture
@@ -95,6 +97,7 @@ class EditLecture(LectureOwnerPermMixin, DataMixin, UpdateView):
         messages.add_message(self.request, messages.SUCCESS, 'Вы успешно изменили параметры лекции.')
         return super().form_valid(form)
 
+
 class DeleteLecture(LectureOwnerPermMixin, DataMixin, DeleteView):
     model = Lecture
     template_name = 'main/form.html'
@@ -113,6 +116,7 @@ class DeleteLecture(LectureOwnerPermMixin, DataMixin, DeleteView):
         messages.add_message(request, messages.SUCCESS, 'Вы успешно удалили лекцию.')
         return super().post(request, *args, **kwargs)
 
+
 class AddLecture(PermissionRequiredMixin, DataMixin, CreateView):
     permission_required = Teacher.Permission
     form_class = LectureForm
@@ -124,7 +128,7 @@ class AddLecture(PermissionRequiredMixin, DataMixin, CreateView):
         context["button_text"] = "Добавить"
         c_def = self.get_user_context(title='Добавить лекцию')
         return dict(list(context.items()) + list(c_def.items()))
-    
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.organizer = self.request.user.teacher
@@ -132,11 +136,16 @@ class AddLecture(PermissionRequiredMixin, DataMixin, CreateView):
         messages.add_message(self.request, messages.SUCCESS, 'Вы успешно добавили лекцию.')
         return super().form_valid(form)
 
+
 @login_required(login_url="login")
 def create_lecture_record(request, *args, **kwargs):
     lecture = get_object_or_404(Lecture, pk=kwargs["lecture_id"])
     record = LectureRecord.objects.filter(lecture=lecture, user=request.user)
-    if request.user.has_perm(Teacher.Permission) or request.user.has_perm(SchRep.Permission):
+    if (
+        request.user.has_perm(Teacher.Permission) or
+        request.user.has_perm(SchRep.Permission) or
+        request.user.has_perm(SupplyManager.Permission)
+    ):
         messages.add_message(request, messages.INFO, 'Вы не можете записаться на лекцию.')
     elif record.exists():
         messages.add_message(request, messages.WARNING, 'Вы уже записались на лекцию.')

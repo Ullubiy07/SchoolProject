@@ -2,7 +2,7 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models.fields.related import ForeignKey
 from django.urls import reverse
-from main.models import School, Category, Interval, SchRep
+from main.models import School, Category, Interval, SchRep, SupplyManager
 from django.templatetags.static import static
 import datetime
 
@@ -107,7 +107,7 @@ class RoomBooking(models.Model):
 
 class RoomQuery(models.Model):
     sender = models.ForeignKey(School, on_delete=models.CASCADE, verbose_name="Отправитель")
-    sch_rep = ForeignKey(SchRep, on_delete=models.CASCADE, verbose_name="Представитель")
+    supply_manager = ForeignKey(SupplyManager, on_delete=models.CASCADE, verbose_name="Завхоз")
     room = ForeignKey("Room", on_delete=models.CASCADE, verbose_name="Помещение")
     quantity = models.SmallIntegerField(verbose_name="Количество")
     booking_begin = models.DateTimeField(verbose_name="Начало брони")

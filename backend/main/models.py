@@ -23,9 +23,9 @@ class School(models.Model):
 class SchRep(models.Model):
     user = OneToOneField(User, on_delete=models.CASCADE)
     school = ForeignKey("School", on_delete=models.CASCADE)
-    credential_id = models.CharField(
-        verbose_name="Индификатор сертификата", max_length=50, null=True, blank=True
-    )
+    # credential_id = models.CharField(
+    #     verbose_name="Индификатор сертификата", max_length=50, null=True, blank=True
+    # )
 
     Permission = "main.school_rep"
     Group = "Представитель школы"
@@ -33,6 +33,25 @@ class SchRep(models.Model):
     class Meta:
         permissions = [
             ("school_rep", "Can be a SchRep")
+        ]
+
+    def __str__(self):
+        return self.user.username
+
+
+class SupplyManager(models.Model):
+    user = OneToOneField(User, on_delete=models.CASCADE)
+    school = ForeignKey("School", on_delete=models.CASCADE)
+    credential_id = models.CharField(
+        verbose_name="Индификатор сертификата", max_length=50, null=True, blank=True
+    )
+
+    Permission = "main.supply_manager"
+    Group = "Завхоз"
+
+    class Meta:
+        permissions = [
+            ("supply_manager", "Can be a Supply Manager")
         ]
 
     def __str__(self):
