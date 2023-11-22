@@ -23,8 +23,7 @@ from EquipApp.models import EquipQuery, EquipBooking
 from LectureApp.models import Lecture
 from RoomApp.models import RoomBooking, RoomQuery
 from main.client import DssClient, SignatureSpec
-from main.forms import RegisterUserForm, LoginUserForm, ChangeUserDataForm, ChangePasswordForm, SupplyManagerSignForm, \
-    SchoolForm
+from main.forms import RegisterUserForm, LoginUserForm, ChangeUserDataForm, ChangePasswordForm, SupplyManagerSignForm, SchoolForm
 from main.models import SchRep, Teacher, SupplyManager
 from main.utils import DataMixin
 import httpx
