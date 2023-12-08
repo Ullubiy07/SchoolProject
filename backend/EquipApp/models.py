@@ -15,6 +15,8 @@ class Equipment(models.Model):
     description = models.TextField(max_length=1000, default="Описания нет", verbose_name="Описание")
     image = models.ImageField(upload_to="equip_photos", verbose_name="Картинка", null=True, blank=True)
     schedule = models.JSONField(verbose_name="Расписание", default=dict, blank=True)
+    approval = models.CharField(verbose_name='Открытое бронирование', max_length=50, choices=(('Да', 'Да'),
+                                                                                   ('Нет', 'Нет')), default='Нет')
 
     def __str__(self):
         return self.name

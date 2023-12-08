@@ -357,7 +357,7 @@ class RespondRoomQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                     )
                     contract = render_contract(request.user.supplymanager, room_query, room_booking.pk)
                     result, contract = sign_contract(
-                        contract, request.user.supplymanager, room_query.supplymanager, "ContractTemplate"
+                        contract, request.user.supplymanager, room_query.supply_manager, "ContractTemplate"
                     )
                     if result:
                         room_booking.contract = contract
@@ -401,7 +401,7 @@ class AddRoomQuery(PermissionRequiredMixin, DataMixin, CreateView):
         user = self.request.user
         if not user.has_perm(SupplyManager.Permission):
             return HttpResponseNotFound("<h1>Страница не доступна<h1>")
-        elif user.has_perm(SupplyManager.Permission) and room.owner != user.supplymanager.school:
+        elif user.has_perm(SupplyManager.Permission) and room.owner == user.supplymanager.school:
             return HttpResponseNotFound("<h1>Страница не доступна<h1>")
         return super().dispatch(request, *args, **kwargs)
 

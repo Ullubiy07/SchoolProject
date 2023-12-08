@@ -201,8 +201,6 @@ def create_supply_manager_user(request):
         while User.objects.filter(username=username).exists():
             username, password = generate_random_string(8), generate_random_string(8)
         user = User.objects.create_user(username=username, password=password)
-        permission = Permission.objects.get(name=SupplyManager.Permission)
-        user.user_permissions.add(permission)
         SupplyManager.objects.create(user=user, school=request.user.schrep.school)
         group = Group.objects.get(name=SupplyManager.Group)
         user.groups.add(group)
@@ -210,7 +208,7 @@ def create_supply_manager_user(request):
         messages.add_message(request, messages.SUCCESS,
                              f'Вы успешно создали аккаунт завхоза. Логин: {username}, Пароль: {password}.'
                              ' Сохраните эту информацию перед закрытием сообщения')
-        return redirect('home')
+
     else:
         return HttpResponseForbidden('Доступ запрещен')
 

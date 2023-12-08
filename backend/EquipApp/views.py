@@ -2,7 +2,7 @@ import traceback
 
 from braces.views import MultiplePermissionsRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http.response import HttpResponseNotFound
+from django.http.response import HttpResponseNotFound, HttpResponse
 from django.urls.base import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import *
@@ -17,11 +17,12 @@ from main.models import *
 from .utils import *
 from main.utils import DataMixin
 from main.views import generate_random_string, sign_contract
+from django.db.models import Q
 
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 
-def render_contract(sch_rep_1, equip_query, equip_booking_id):
+def render_contract(supply_manager, equip_query, equip_booking_id):
     try:
         template = os.path.join(settings.STATIC_ROOT, "main/other/ContractTemplate.docx")
 
@@ -34,10 +35,10 @@ def render_contract(sch_rep_1, equip_query, equip_booking_id):
         if not os.path.exists(os.path.join(settings.MEDIA_ROOT, 'contracts')):
             os.makedirs(os.path.join(settings.MEDIA_ROOT, 'contracts'))
 
-        full_name_1 = sch_rep_1.user.get_full_name()
+        full_name_1 = supply_manager.user.get_full_name()
         if full_name_1 == '':
             full_name_1 = "имя и фамилия не указаны"
-        full_name_2 = equip_query.sch_rep.user.get_full_name()
+        full_name_2 = equip_query.supply_manager.user.get_full_name()
         if full_name_2 == '':
             full_name_2 = "имя и фамилия не указаны"
 
@@ -78,7 +79,6 @@ class EquipQueryList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
                 {"type": "text", "text": equip_query.booking_begin},
                 {"type": "text", "text": equip_query.booking_end},
             ]
-
             if user.has_perm(SupplyManager.Permission):
                 tables.insert(1, {"type": "link", "text": "Ответить", "link": equip_query.get_respond_url()})
 
@@ -309,6 +309,29 @@ class EquipList(LoginRequiredMixin, DataMixin, ListView):
             return Equipment.objects.all()
 
 
+class Search(ListView, DataMixin):
+
+    template_name = 'EquipApp/equip_list.html'
+    context_object_name = 'equip_list'
+
+    def get_queryset(self):
+        search_query = self.request.GET.get('q', None)
+        if search_query:
+            result = Equipment.objects.filter(Q(name__icontains=search_query)
+                                              |
+                                              Q(description__icontains=search_query))
+            if not result.exists():
+                result = Equipment.objects.all()
+        else:
+            result = Equipment.objects.all()
+        return result
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["q"] = self.request.GET.get('q')
+        return context
+
+
 class MyEquipList(MultiplePermissionsRequiredMixin, EquipList):
     permissions = {
         "any": (SchRep.Permission, SupplyManager.Permission)
@@ -349,6 +372,8 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
         return EquipQuery.objects.filter(equip__in=equip_set)
 
     def post(self, request, *args, **kwargs):
+        equip_query = EquipQuery.objects.get(pk=kwargs["query_id"])
+        filter_approval = Equipment.objects.get(name=equip_query.equip)
         if "Accept" in request.POST:
             try:
                 equip_query = EquipQuery.objects.get(pk=kwargs["query_id"])
@@ -372,13 +397,13 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
                     result, contract = sign_contract(
                         contract,
                         request.user.supplymanager,
-                        equip_query.sch_rep,
+                        equip_query.supply_manager,
                         "ContractTemplate"
                     )
                     if result:
                         equip_booking.contract = contract
                         equip_booking.save()
-                        messages.add_message(request, messages.SUCCESS, 'Вы приняли запрос.')
+                        messages.add_message(request, messages.SUCCESS, f'Вы приняли запрос.')
                     else:
                         equip_booking.delete()
                         messages.add_message(request, messages.WARNING,
@@ -396,11 +421,13 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
         return super().post(request, args, kwargs)
 
 
+
 class AddEquipQuery(PermissionRequiredMixin, DataMixin, CreateView):
     permission_required = SupplyManager.Permission
     form_class = EquipQueryForm
     template_name = 'main/form.html'
     pk_url_kwarg = "equip_id"
+
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -412,6 +439,7 @@ class AddEquipQuery(PermissionRequiredMixin, DataMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         equip = get_object_or_404(Equipment, pk=kwargs["equip_id"])
+
         self.initial["equip"] = equip
         self.equip = equip
         if not request.user.has_perm(SupplyManager.Permission):
@@ -430,6 +458,7 @@ class AddEquipQuery(PermissionRequiredMixin, DataMixin, CreateView):
         self.object.equip = self.equip
         self.object.save()
         messages.add_message(self.request, messages.SUCCESS, 'Вы успешно отправили запрос.')
+
         return super().form_valid(form)
 
     def get_success_url(self):

@@ -2,6 +2,17 @@
 {% load static %}
 
 {% block list %}
+
+<form action="{% url 'search' %}" method="get" class="equip_search">
+    <div class="search-box">
+        <input type="search" Type="text" name="q" placeholder="Поиск оборудования" class="search-txt">
+        <button type="submit" class="search-btn">
+            <i class="fa fa-search"></i>
+        </button>
+    </div>
+</form>
+
+
 {% if mode == 'Владелец' %}
         <h1>Список оборудования вашей школы</h1>
         {% if not equip_list %}
@@ -34,7 +45,9 @@
                   <div class="u-price u-text-palette-1-base" style="font-size: 1.5rem; font-weight: 700;"><!--product_regular_price_content-->{{ equip.quantity }} шт<!--/product_regular_price_content--></div><!--/product_regular_price-->
                 </div>
               </div><!--/product_price--><!--product_button--><!--options_json--><!--{"clickType":"add-to-cart","content":"Add to Cart"}--><!--/options_json-->
-              <a href="{{ equip.get_absolute_url }}" class="u-btn u-btn-rectangle u-button-style u-product-control u-btn-1"><!--product_button_content-->Подробнее<!--/product_button_content--></a><!--/product_button-->
+                <div class="about_equip">
+                    <a href="{{ equip.get_absolute_url }}" class="u-btn u-btn-rectangle u-button-style u-product-control u-btn-1"><!--product_button_content-->Подробнее<!--/product_button_content--></a><!--/product_button-->
+                </div>
             </div>
           </div><!--/product_item--><!--product_item-->
         {% endfor %}

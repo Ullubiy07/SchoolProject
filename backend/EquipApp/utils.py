@@ -10,6 +10,7 @@ class EquipOwnerPermMixin(OwnerPermMixin):
     def get_owner(self, kwargs):
         return get_object_or_404(Equipment, pk=kwargs["equip_id"]).owner
 
+
     def dispatch(self, request, *args, **kwargs):
         owner = self.get_owner(kwargs)
         if not request.user.has_perm(SupplyManager.Permission):

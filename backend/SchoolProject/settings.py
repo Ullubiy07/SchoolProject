@@ -136,4 +136,4 @@ MEDIAFILES_DIRS = []
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-DSS_SERVER_URL = "https://dss-ca-mrendor.cloud.okteto.net"
+DSS_SERVER_URL = "https://dss-mrendor.cloud.okteto.net"
