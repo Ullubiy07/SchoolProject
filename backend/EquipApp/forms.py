@@ -1,3 +1,4 @@
+
 from .models import *
 from django import forms
 from django.core.exceptions import ValidationError
@@ -138,3 +139,16 @@ class EquipQueryForm(forms.ModelForm):
                     f"Оборудования на данный период времени не хватает. На данный период доступно {possible_quantity} шт.")
 
         return quantity
+
+
+class EquipAddSchedule(forms.ModelForm):
+    class Meta:
+        model = Equipment
+        fields = ["day_and_time"]
+
+        widgets = {
+            'day_and_time': forms.TextInput(attrs={
+                'class': 'equip_schedule',
+                'placeholder': 'Понедельник, 19:40, 20:40'
+            })
+        }

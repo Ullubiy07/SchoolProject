@@ -10,4 +10,5 @@ urlpatterns = [
     path('lecture/<int:lecture_id>/delete/', DeleteLecture.as_view(), name="delete_lecture"),
     path('lecture/<int:lecture_id>/create_record/', create_lecture_record, name="create_lecture_record"),
     path('lecture/add/', AddLecture.as_view(), name="add_lecture"),
+    path('lecture_search/', LectureSearch.as_view(), name='lecture_search')
 ]

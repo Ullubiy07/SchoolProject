@@ -27,6 +27,7 @@ from main.forms import RegisterUserForm, LoginUserForm, ChangeUserDataForm, Chan
 from main.models import SchRep, Teacher, SupplyManager
 from main.utils import DataMixin
 import httpx
+import datetime
 
 
 class MyThread(Thread):
@@ -208,6 +209,7 @@ def create_supply_manager_user(request):
         messages.add_message(request, messages.SUCCESS,
                              f'Вы успешно создали аккаунт завхоза. Логин: {username}, Пароль: {password}.'
                              ' Сохраните эту информацию перед закрытием сообщения')
+        return redirect('home')
 
     else:
         return HttpResponseForbidden('Доступ запрещен')
@@ -335,3 +337,10 @@ def sign_contract(
     except Exception as e:
         logger.error("Error signing document", exc_info=e)
         return False, None
+
+
+def view_profile(request):
+    context = {
+        'user': request.user
+    }
+    return render(request, 'main/profile.html', context)

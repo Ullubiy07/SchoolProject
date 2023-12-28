@@ -11,6 +11,7 @@ from .utils import *
 
 from main.models import *
 from main.utils import DataMixin
+from django.db.models import Q
 
 
 class LectureList(LoginRequiredMixin, DataMixin, ListView):
@@ -33,9 +34,41 @@ class LectureList(LoginRequiredMixin, DataMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         if user.has_perm(Teacher.Permission):
-            return Lecture.objects.exclude(organizer=user.teacher)
+            return Lecture.objects.all()    #exclude(organizer=user.teacher)
         else:
             return Lecture.objects.all()
+
+
+class LectureSearch(ListView, DataMixin):
+
+    template_name = 'LectureApp/lecture_list.html'
+    context_object_name = 'lecture_list'
+
+    def get_queryset(self):
+        search_query = self.request.GET.get('q', None)
+        if search_query:
+            result = Lecture.objects.filter(Q(name__icontains=search_query)
+                                            |
+                                            Q(description__icontains=search_query)
+                                            |
+                                            Q(category__name__icontains=search_query)
+                                            |
+                                            Q(address__icontains=search_query)
+                                            |
+                                            Q(target_audience__name__icontains=search_query))
+            if not result.exists():
+                result = messages.add_message(self.request, messages.WARNING, 'Лекция не найдена')
+
+        else:
+            result = messages.add_message(self.request, messages.WARNING, 'Вы ничего не ввели!')
+        return result
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["q"] = self.request.GET.get('q')
+        c_def = self.get_user_context()
+        return dict(list(context.items()) + list(c_def.items()))
+
 
 
 class MyLectureList(PermissionRequiredMixin, LectureList):

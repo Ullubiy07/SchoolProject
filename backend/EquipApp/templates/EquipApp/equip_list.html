@@ -3,7 +3,7 @@
 
 {% block list %}
 
-<form action="{% url 'search' %}" method="get" class="equip_search">
+<form action="{% url 'equip_search' %}" method="get" class="equip_search">
     <div class="search-box">
         <input type="search" Type="text" name="q" placeholder="Поиск оборудования" class="search-txt">
         <button type="submit" class="search-btn">
@@ -20,7 +20,7 @@
         {% endif %}
         <a href="{% url 'equip_list' %}">Посмотреть общий список оборудования</a>
       {% else %}
-        <h1>Общий список оборудования</h1> 
+        <h1>Общий список оборудования</h1>
         {% if mode == 'Действие' %}
           <a href="{% url 'my_equip_list' %}">Посмотреть список оборудования моей школы</a>
         {% endif %}

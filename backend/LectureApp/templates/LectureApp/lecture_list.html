@@ -1,6 +1,17 @@
 {% extends 'main/list.html' %}
 
 {% block list %}
+
+<form action="{% url 'lecture_search' %}" method="get" class="lecture_search">
+    <div class="search-box">
+        <input type="search" Type="text" name="q" placeholder="Поиск лекций" class="search-txt">
+        <button type="submit" class="search-btn">
+            <i class="fa fa-search"></i>
+        </button>
+    </div>
+</form>
+
+
 {% if mode == 'Владелец' %}
         <h1>Список ваших лекций</h1>
         {% if not lecture_list %}
@@ -8,7 +19,7 @@
         {% endif %}
         <a href="{% url 'lecture_list' %}">Посмотреть общий список лекций</a>
       {% else %}
-        <h1>Общий список лекций</h1> 
+        <h1>Общий список лекций</h1>
         {% if mode == 'Действие' %}
           <a href="{% url 'my_lecture_list' %}">Посмотреть список моих лекций</a>
         {% endif %}
@@ -32,7 +43,9 @@
                   <div class="u-price u-text-palette-1-base" style="font-size: 1.5rem; font-weight: 700;"><!--product_regular_price_content-->{{lecture.get_record_quantity }}/{{lecture.max_places}}<!--/product_regular_price_content--></div><!--/product_regular_price-->
                 </div>
               </div><!--/product_price--><!--product_button--><!--options_json--><!--{"clickType":"add-to-cart","content":"Add to Cart"}--><!--/options_json-->
-              <a href="{{ lecture.get_absolute_url }}" class="u-btn u-btn-rectangle u-button-style u-product-control u-btn-1"><!--product_button_content-->Подробнее<!--/product_button_content--></a><!--/product_button-->
+              <div class="about_lecture">
+                  <a href="{{ lecture.get_absolute_url }}" class="u-btn u-btn-rectangle u-button-style u-product-control u-btn-1"><!--product_button_content-->Подробнее<!--/product_button_content--></a><!--/product_button-->
+              </div>
             </div>
           </div><!--/product_item--><!--product_item-->
         {% endfor %}

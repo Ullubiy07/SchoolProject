@@ -13,6 +13,6 @@ urlpatterns = [
 
     path('change_sch_rep_sign/', ChangeSupplyManagerSign.as_view(), name='change_sch_rep_sign'),
     path('change_school_data/', ChangeSchoolData.as_view(), name='change_school_data'),
-
+    path('view_profile/', view_profile, name='profile'),
     path('install_file/<path:file_path>/', install_file, name="install_file"),
 ]

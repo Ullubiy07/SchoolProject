@@ -1,4 +1,6 @@
 from django.urls import path
+
+from . import views
 from .views import *
 
 urlpatterns = [
@@ -19,5 +21,5 @@ urlpatterns = [
     path('equip_query/<int:query_id>/edit/', EditEquipQuery.as_view(), name='edit_equip_query'),
     path('equip_query/<int:query_id>/delete/', DeleteEquipQuery.as_view(), name='delete_equip_query'),
     path('equip_query/<int:query_id>/respond/', RespondEquipQuery.as_view(), name='equip_query_respond'),
-    path('search/', Search.as_view(), name='search')
+    path('equip_search/', EquipSearch.as_view(), name='equip_search')
 ]

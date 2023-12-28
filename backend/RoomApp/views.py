@@ -15,6 +15,8 @@ from main.models import *
 from .utils import *
 from main.utils import DataMixin
 from main.views import sign_contract, generate_random_string
+from django.db.models import Q
+import datetime
 
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
@@ -176,6 +178,7 @@ class RoomBookingList(LoginRequiredMixin, DataMixin, ListView):
 
         room = get_object_or_404(Room, pk=self.kwargs['room_id'])
         table = []
+
         for room_booking in context["room_booking_list"]:
             table.append([
                 {"type": "text", "text": room_booking.temp_owner},
@@ -200,6 +203,7 @@ class RoomBookingList(LoginRequiredMixin, DataMixin, ListView):
         return RoomBooking.objects.filter(room_id=room_id)
 
 
+
 class MyRoomBookingList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
     permissions = {
         "any": (SchRep.Permission, SupplyManager.Permission)
@@ -208,6 +212,17 @@ class MyRoomBookingList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
     template_name = 'main/table.html'
     context_object_name = 'room_booking_list'
     login_url = reverse_lazy('login')
+
+    def check_data_room(self):
+
+        the_data, time_now = datetime.datetime.today(), datetime.datetime.now()
+        the_day = the_data.day
+        the_year = the_data.year
+        the_month = the_data.month
+
+        the_hour = time_now.hour
+        the_minute = time_now.minute
+        return f'{the_day}-{the_month}-{the_year}-{the_hour}:{the_minute}'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -228,13 +243,15 @@ class MyRoomBookingList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
             context["table_head"] = ["Помещение", "Количество", "Начало брони", "Конец брони", "Договор"]
         else:
             context["text"] = "Ваша школа не бронировала помещения"
-
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
         user = self.request.user
+        data_of_delete_room = datetime.datetime.strptime(self.check_data_room(), "%d-%m-%Y-%H:%M")
+        RoomBooking.objects.filter(booking_end=data_of_delete_room).delete()
         if user.has_perm(SchRep.Permission):
             return RoomBooking.objects.filter(temp_owner=user.schrep.school)
+
         elif user.has_perm(SupplyManager.Permission):
             return RoomBooking.objects.filter(temp_owner=user.supplymanager.school)
         raise PermissionDenied()
@@ -293,11 +310,43 @@ class RoomList(LoginRequiredMixin, DataMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         if user.has_perm(SchRep.Permission):
-            return Room.objects.exclude(owner=user.schrep.school)
+            return Room.objects.all()    #exclude(owner=user.schrep.school)
         elif user.has_perm(SupplyManager.Permission):
-            return Room.objects.exclude(owner=user.supplymanager.school)
+            return Room.objects.all()    #exclude(owner=user.supplymanager.school)
         else:
             return Room.objects.all()
+
+
+class RoomSearch(ListView, DataMixin):
+
+    template_name = 'RoomApp/room_list.html'
+    context_object_name = 'room_list'
+
+    def get_queryset(self):
+        search_query = self.request.GET.get('q', None)
+        if search_query:
+            result = Room.objects.filter(Q(name__icontains=search_query)
+                                         |
+                                         Q(description__icontains=search_query)
+                                         |
+                                         Q(owner__name__icontains=search_query)
+                                         |
+                                         Q(category__name__icontains=search_query)
+                                         |
+                                         Q(address__icontains=search_query))
+            if not result.exists():
+                result = Room.objects.all()
+                messages.add_message(self.request, messages.WARNING, 'Помещение не найдено')
+        else:
+            result = Room.objects.all()
+            messages.add_message(self.request, messages.WARNING, 'Вы ничего не ввели!')
+        return result
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["q"] = self.request.GET.get('q')
+        c_def = self.get_user_context()
+        return dict(list(context.items()) + list(c_def.items()))
 
 
 class MyRoomList(MultiplePermissionsRequiredMixin, RoomList):

@@ -506,3 +506,51 @@
     margin-right: 30px;
   }
 }
+
+.feedback {
+    padding: 30px;
+}
+
+.feedback:hover {
+    transform: scale(1, 1.1);
+    transition: .7s;
+}
+
+.greetings {
+    width: 17ch;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 4px solid #478ac9;
+    display: inline-block;
+    animation: flashing-border 0.75s step-end infinite,
+    printed-text 3s ease;
+}
+
+.greetings2 {
+    width: 27ch;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+    animation: flashing-border 0.75s step-end,
+    printed-text 5s ease;
+}
+
+@keyframes flashing-border{
+    0%{
+        border-color: #478ac9;
+    }
+    50%{
+        border-color: transparent;
+    }
+    100%{
+        border-color: orange;
+    }
+}
+
+@keyframes printed-text{
+    from{
+        width: 0;
+    }
+}

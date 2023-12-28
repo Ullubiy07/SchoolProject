@@ -19,4 +19,5 @@ urlpatterns = [
     path('room_query/<int:query_id>/edit/', EditRoomQuery.as_view(), name='edit_room_query'),
     path('room_query/<int:query_id>/delete/', DeleteRoomQuery.as_view(), name='delete_room_query'),
     path('room_query/<int:query_id>/respond/', RespondRoomQuery.as_view(), name='room_query_respond'),
+    path('room_search/', RoomSearch.as_view(), name='room_search')
 ]

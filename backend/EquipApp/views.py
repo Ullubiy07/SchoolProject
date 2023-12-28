@@ -4,13 +4,12 @@ from braces.views import MultiplePermissionsRequiredMixin, LoginRequiredMixin, P
 from django.core.exceptions import PermissionDenied
 from django.http.response import HttpResponseNotFound, HttpResponse
 from django.urls.base import reverse_lazy
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import *
 from django.contrib import messages
 from docxtpl import DocxTemplate
 from django.conf import settings
 import os
-
 from .forms import *
 from .models import *
 from main.models import *
@@ -18,6 +17,7 @@ from .utils import *
 from main.utils import DataMixin
 from main.views import generate_random_string, sign_contract
 from django.db.models import Q
+import datetime
 
 week_days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
@@ -182,6 +182,7 @@ class EquipBookingList(LoginRequiredMixin, DataMixin, ListView):
         c_def = self.get_user_context(title='Список брони')
 
         equip = get_object_or_404(Equipment, pk=self.kwargs['equip_id'])
+
         table = []
         equip_booking: EquipBooking
         for equip_booking in context["equip_booking_list"]:
@@ -217,6 +218,17 @@ class MyEquipBookingList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
     context_object_name = 'equip_booking_list'
     login_url = reverse_lazy('login')
 
+    def check_data(self):
+
+        the_data, time_now = datetime.datetime.today(), datetime.datetime.now()
+        the_day = the_data.day
+        the_year = the_data.year
+        the_month = the_data.month
+
+        the_hour = time_now.hour
+        the_minute = time_now.minute
+        return f'{the_day}-{the_month}-{the_year}-{the_hour}:{the_minute}'
+
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title='Бронирования школы')
@@ -241,6 +253,8 @@ class MyEquipBookingList(MultiplePermissionsRequiredMixin, DataMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
+        data_of_delete = datetime.datetime.strptime(self.check_data(), "%d-%m-%Y-%H:%M")
+        EquipBooking.objects.filter(booking_end=data_of_delete).delete()
         if user.has_perm(SchRep.Permission):
             return EquipBooking.objects.filter(temp_owner=user.schrep.school)
         elif user.has_perm(SupplyManager.Permission):
@@ -302,14 +316,14 @@ class EquipList(LoginRequiredMixin, DataMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         if user.has_perm(SchRep.Permission):
-            return Equipment.objects.exclude(owner=user.schrep.school)
+            return Equipment.objects.all()     #exclude(owner=user.schrep.school)
         elif user.has_perm(SupplyManager.Permission):
-            return Equipment.objects.exclude(owner=user.supplymanager.school)
+            return Equipment.objects.all()    #exclude(owner=user.supplymanager.school)
         else:
             return Equipment.objects.all()
 
 
-class Search(ListView, DataMixin):
+class EquipSearch(ListView, DataMixin):
 
     template_name = 'EquipApp/equip_list.html'
     context_object_name = 'equip_list'
@@ -319,17 +333,27 @@ class Search(ListView, DataMixin):
         if search_query:
             result = Equipment.objects.filter(Q(name__icontains=search_query)
                                               |
-                                              Q(description__icontains=search_query))
+                                              Q(description__icontains=search_query)
+                                              |
+                                              Q(owner__name__icontains=search_query)
+                                              |
+                                              Q(category__name__icontains=search_query))
             if not result.exists():
                 result = Equipment.objects.all()
+                messages.add_message(self.request, messages.WARNING, 'Оборудование не найдено')
+
         else:
             result = Equipment.objects.all()
+            messages.add_message(self.request, messages.WARNING, 'Вы ничего не ввели!')
         return result
+
+
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context["q"] = self.request.GET.get('q')
-        return context
+        c_def = self.get_user_context()
+        return dict(list(context.items()) + list(c_def.items()))
 
 
 class MyEquipList(MultiplePermissionsRequiredMixin, EquipList):
@@ -373,7 +397,6 @@ class RespondEquipQuery(PermissionRequiredMixin, DataMixin, DeleteView):
 
     def post(self, request, *args, **kwargs):
         equip_query = EquipQuery.objects.get(pk=kwargs["query_id"])
-        filter_approval = Equipment.objects.get(name=equip_query.equip)
         if "Accept" in request.POST:
             try:
                 equip_query = EquipQuery.objects.get(pk=kwargs["query_id"])
@@ -608,3 +631,33 @@ class DeleteEquip(EquipOwnerPermMixin, DataMixin, DeleteView):
         else:
             messages.add_message(request, messages.SUCCESS, 'Вы успешно удалили оборудование с учета.')
             return super().post(request, *args, **kwargs)
+
+
+def error_404(request, exception):
+    return redirect('home')
+
+
+# def add_equip_schedule(request):
+#     error = ''
+#     if request.method == 'POST':
+#         form = EquipAddSchedule(request.POST, request.FILES)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('films_home')
+#         else:
+#             error = 'Форма заполнена неверно'
+#
+#     form = EquipAddSchedule()
+#     data = {
+#         'form': form,
+#         'error': error
+#     }
+#
+#     return render(request, 'EquipApp/equip_schedule.html', data)
+#
+#     # def get_context_data(self, *, object_list=None, **kwargs):
+#     #     context = super().get_context_data(**kwargs)
+#     #     context["title_text"] = "Добавить оборудование"
+#     #     context["button_text"] = "Добавить"
+#     #     c_def = self.get_user_context(title='Добавить оборудование')
+#     #     return dict(list(context.items()) + list(c_def.items()))
