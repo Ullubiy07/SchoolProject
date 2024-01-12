@@ -18,4 +18,4 @@ if settings.DEBUG:
             static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
         )
 
-handler404 = 'EquipApp.views.error_404'
+handler404 = 'server.EquipApp.views.error_404'

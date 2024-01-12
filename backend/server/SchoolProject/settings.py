@@ -33,10 +33,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'EquipApp',
-    'RoomApp',
-    'LectureApp',
-    'main'
+    'server.EquipApp',
+    'server.RoomApp',
+    'server.LectureApp',
+    'server.main'
 ]
 
 MIDDLEWARE = [
@@ -49,14 +49,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'SchoolProject.urls'
+ROOT_URLCONF = 'server.SchoolProject.urls'
 
 CSRF_TRUSTED_ORIGINS = ['https://app-mrendor.cloud.okteto.net']
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'main/templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'server/main/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -69,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'SchoolProject.wsgi.application'
+WSGI_APPLICATION = 'server.SchoolProject.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
