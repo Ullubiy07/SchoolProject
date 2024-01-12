@@ -10,7 +10,7 @@ from .models import *
 from .utils import *
 
 from main.models import *
-from main.utils import DataMixin
+from backend.main.utils import DataMixin
 from django.db.models import Q
 
 

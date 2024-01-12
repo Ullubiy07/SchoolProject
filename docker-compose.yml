@@ -15,8 +15,8 @@ services:
 #           - "resources:latest"
           - "*"
       volumes:
-        - media:/code/media/
-        - ./backend/:/code
+        - media:/backend/media/
+        - ./backend/:/backend
       env_file:
         - ./config/backend/.env
       depends_on:

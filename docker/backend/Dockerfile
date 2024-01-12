@@ -1,3 +1,4 @@
+
 # syntax=docker/dockerfile:1
 FROM python:3.10.9-slim AS development_build
 
@@ -59,19 +60,19 @@ RUN apt-get update && apt-get upgrade -y \
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /code
+WORKDIR /backend
 
 # This is a special case. We need to run this script as an entry point:
 COPY ./docker/backend/entrypoint.sh /docker-entrypoint.sh
 
 # Setting up proper permissions:
 RUN groupadd -g "${GID}" -r resources \
-  && useradd -d '/code' -g resources -l -r -u "${UID}" resources \
-  && chown resources:resources -R '/code' \
-  && mkdir -p '/code/media/contracts/' \
-  && chown resources:resources '/code/media/contracts/'
+  && useradd -d '/backend' -g resources -l -r -u "${UID}" resources \
+  && chown resources:resources -R '/backend' \
+  && mkdir -p '/backend/media/contracts/' \
+  && chown resources:resources '/backend/media/contracts/'
 
-COPY --chown=resources:resources ./backend/poetry.lock ./backend/pyproject.toml /code/
+COPY --chown=resources:resources ./backend/poetry.lock ./backend/pyproject.toml /backend/
 
 RUN --mount=type=cache,target="$POETRY_CACHE_DIR" \
   echo "$DJANGO_ENV" \
@@ -91,5 +92,5 @@ ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
 
 FROM development_build AS production_build
 
-COPY --chown=dentaal:dentaal ./backend /code
-#COPY --chown=dentaal:dentaal ./docker/backend/gunicorn.sh /code
+COPY --chown=dentaal:dentaal ./backend /backend
+#COPY --chown=dentaal:dentaal ./docker/backend/gunicorn.sh /code
