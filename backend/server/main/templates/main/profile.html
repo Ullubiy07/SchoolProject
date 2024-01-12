@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+<head>
+    <link rel="stylesheet" href="{% static 'main/css/profile.css' %}" media="screen">
+    <link rel="stylesheet" href="{% static 'main/css/nicepage.css' %}" media="screen">
+</head>
+<body>
+    <header class="header_profile">
+    </header>
+    <h1 class="new_page">Привет мир</h1>
+    <div>{{ user }} {{ time }}</div>
+</body>
+</html>
