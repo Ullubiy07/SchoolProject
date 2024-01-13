@@ -34,8 +34,10 @@ class LectureList(LoginRequiredMixin, DataMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         if user.has_perm(Teacher.Permission):
-            return Lecture.objects.all()    #exclude(organizer=user.teacher)
+            messages.add_message(self.request, messages.SUCCESS, 'Ты учитель')
+            return Lecture.objects.all()  # exclude(organizer=user.teacher)
         else:
+            messages.add_message(self.request, messages.WARNING, 'Ты не учитель')
             return Lecture.objects.all()
 
 
