@@ -1,0 +1,10 @@
+{% extends 'main/list.html' %}
+{% load static %}
+
+{% block list %}
+    <form action="{% url 'equip_schedule' %}" method="POST">
+        {% csrf_token %}
+        {{form.as_p}}
+    <button type="submit">Submit</button>
+</form>
+{% endblock list %}

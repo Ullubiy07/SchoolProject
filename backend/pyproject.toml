@@ -21,7 +21,7 @@ et-xmlfile = "1.1.0"
 gunicorn = "20.1.0"
 Jinja2 = "3.1.2"
 jmespath = "1.0.1"
-lxml = "4.9.3"
+lxml = "4.9.1"
 MarkupSafe = "2.1.1"
 openpyxl = "3.0.10"
 Pillow = "9.3.0"
@@ -37,8 +37,6 @@ urllib3 = "1.26.12"
 whitenoise = "6.2.0"
 httpx = "^0.23.3"
 django-braces = "^1.15.0"
-django-split-settings = "^1.2.0"
-django-debug-toolbar = "^4.2.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,0 +1,19 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block links %}
+<link rel="stylesheet" href="{% static 'main/css/list.css' %}" media="screen">
+<link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
+{% endblock links %}
+
+{% block content %}
+<section class="u-align-center u-clearfix u-grey-10 u-section-1" id="sec-edbd">
+  <div class="u-clearfix u-sheet u-valign-middle u-sheet-1">
+    <div class="u-expanded-width u-products u-products-1">
+      {% block list %}
+      {% endblock list %}
+      </div>
+    </div><!--/products-->
+  </div>
+</section>
+{% endblock content %}

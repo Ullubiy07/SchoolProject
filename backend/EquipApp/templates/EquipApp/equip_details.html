@@ -1,0 +1,27 @@
+{% extends 'main/details.html' %}
+
+{% block details %}
+<img alt="" class="u-border-3 u-border-grey-75 u-image u-image-round u-product-control u-radius-50 u-image-1" data-image-width="2000" data-image-height="1333"  src="{{ equip.get_image_url }}"><!--/product_image-->
+<h1 class="u-align-center u-text u-text-1">{{ equip.name }}</h1>
+<h3 class="u-text u-text-2">Количество: {{ equip.quantity }}</h3>
+<h3 class="u-text u-text-3">Владелец: {{equip.owner }}</h3>
+<h3 class="u-text u-text-3">Категория: {{equip.category.name }}</h3>
+<h3 class="u-text u-text-4">Описание:</h3><!--product_content-->
+<p class="u-product-control u-product-desc u-text u-text-5"><!--product_content_content--> {{ equip.description|linebreaksbr }} <!--/product_content_content--></p><!--/product_content-->
+<h3 class="u-text u-text-6">Возможные действия:</h3>
+<ul class="u-text u-text-7">
+  <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'equip_booking_list' equip.pk %}">Бронирования</a></li>
+  <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'equip_schedule' equip.pk %}">Расписание</a></li>
+  {% if mode == 'Действие' %}
+    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'add_equip_query' equip.pk %}">Отправить запрос</a></li>
+  {% elif mode == 'Владелец' %}
+    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'delete_equip' equip.pk %}">Удалить</a></li>
+    <li><a class="u-btn u-btn-round u-radius-10" style="margin-top: 1px" href="{% url 'edit_equip' equip.pk %}">Изменить</a></li>
+  {% endif %}
+</ul>
+{% if mode == 'Действие' %}
+  <a href="{% url 'equip_list' %}" class="u-btn u-btn-round u-button-style u-hover-palette-1-light-1 u-palette-1-base u-radius-50 u-btn-1">К списку</a>
+{% elif mode == 'Владелец' %}
+  <a href="{% url 'my_equip_list' %}" class="u-btn u-btn-round u-button-style u-hover-palette-1-light-1 u-palette-1-base u-radius-50 u-btn-1">К списку</a>
+{% endif %}
+{% endblock details %}

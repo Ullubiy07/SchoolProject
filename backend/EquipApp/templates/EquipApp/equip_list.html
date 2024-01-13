@@ -1,0 +1,54 @@
+{% extends 'main/list.html' %}
+{% load static %}
+
+{% block list %}
+
+<form action="{% url 'equip_search' %}" method="get" class="equip_search">
+    <div class="search-box">
+        <input type="search" Type="text" name="q" placeholder="Поиск оборудования" class="search-txt">
+        <button type="submit" class="search-btn">
+            <i class="fa fa-search"></i>
+        </button>
+    </div>
+</form>
+
+
+{% if mode == 'Владелец' %}
+        <h1>Список оборудования вашей школы</h1>
+        {% if not equip_list %}
+          <h1>Упс... тут ничего нет</h1>
+        {% endif %}
+        <a href="{% url 'equip_list' %}">Посмотреть общий список оборудования</a>
+      {% else %}
+        <h1>Общий список оборудования</h1>
+        {% if mode == 'Действие' %}
+          <a href="{% url 'my_equip_list' %}">Посмотреть список оборудования моей школы</a>
+        {% endif %}
+      {% endif %}
+
+      {% if mode == 'Владелец' %}
+        <a href="{% url 'add_equip' %}">Добавить оборудование</a>
+        <a href="{% static 'main/other/ScheduleTemplate.xlsx' %}">Скачать шаблон расписания оборудования</a>
+      {% endif %}
+      <br>
+      <div class="u-repeater u-repeater-1"><!--product_item-->
+        {% for equip in equip_list %}
+          <div class="u-align-left u-container-style u-products-item u-repeater-item u-white u-repeater-item-1">
+            <div class="u-container-layout u-similar-container u-container-layout-1"><!--product_image-->
+              <img src="{{ equip.get_image_url }}" class="u-expanded-width u-image u-image-default u-product-control u-image-1"><!--/product_image--><!--product_title-->
+              <h4 class="u-product-control u-text u-text-1">
+                <a class="u-product-title-link" href="#"><!--product_title_content-->{{ equip.name }}<!--/product_title_content--></a>
+              </h4><!--/product_title--><!--product_content-->
+              <div class="u-product-control u-product-desc u-text u-text-2"><!--product_content_content--><p>{{ equip.description|truncatechars:60 }}</p><!--/product_content_content--></div><!--/product_content--><!--product_price-->
+              <div class="u-product-control u-product-price u-product-price-1">
+                <div class="u-price-wrapper u-spacing-10">
+                  <div class="u-price u-text-palette-1-base" style="font-size: 1.5rem; font-weight: 700;"><!--product_regular_price_content-->{{ equip.quantity }} шт<!--/product_regular_price_content--></div><!--/product_regular_price-->
+                </div>
+              </div><!--/product_price--><!--product_button--><!--options_json--><!--{"clickType":"add-to-cart","content":"Add to Cart"}--><!--/options_json-->
+                <div class="about_equip">
+                    <a href="{{ equip.get_absolute_url }}" class="u-btn u-btn-rectangle u-button-style u-product-control u-btn-1"><!--product_button_content-->Подробнее<!--/product_button_content--></a><!--/product_button-->
+                </div>
+            </div>
+          </div><!--/product_item--><!--product_item-->
+        {% endfor %}
+{% endblock list %}
