@@ -10,7 +10,11 @@
         </button>
     </div>
 </form>
-
+{% if perm %}
+    <div class="button_add">
+        <a href='{% url "add_lecture" %}' class="add_lecture"><button type="button" style="background-color: #39c; border: none; padding: 10px; color: white; border-radius: 15px"><i class="fa fa-plus-circle"></i> Добавить</button></a>
+    </div>
+{% endif %}
 
 {% if mode == 'Владелец' %}
         <h1>Список ваших лекций</h1>

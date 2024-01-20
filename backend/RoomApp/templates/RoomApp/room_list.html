@@ -12,6 +12,14 @@
     </div>
 </form>
 
+{% if room_perm %}
+    <div class="button_add">
+        <a href='{% url "add_room" %}' class="add_room"><button type="button" style="background-color: #39c; border: none; padding: 10px; color: white; border-radius: 15px"><i class="fa fa-plus-circle"></i> Добавить</button></a>
+    </div>
+{% endif %}
+
+
+
 {% if mode == 'Владелец' %}
         <h1>Список помещений вашей школы</h1>
         {% if not room_list %}

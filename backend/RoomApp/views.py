@@ -300,10 +300,11 @@ class RoomList(LoginRequiredMixin, DataMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        if not user.has_perm(SupplyManager.Permission) and not user.has_perm(SchRep.Permission):
-            context["mode"] = "Просмотр"
-        else:
+        if user.has_perm(SupplyManager.Permission) or user.has_perm(SchRep.Permission):
             context["mode"] = self.mode
+            context["room_perm"] = True
+        else:
+            context["mode"] = "Просмотр"
         c_def = self.get_user_context(title='Список помещений')
         return dict(list(context.items()) + list(c_def.items()))
 

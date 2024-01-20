@@ -1,3 +1,44 @@
+.add_lecture {
+    display: block;
+    margin-left: 85%;
+    margin-top: 50px;
+    position: absolute;
+}
+
+.add_lecture:hover {
+    transform: scale(1.1);
+    transition: .6s;
+    color: red;
+}
+
+
+.add_equip {
+    display: block;
+    margin-left: 85%;
+    margin-top: 50px;
+    position: absolute;
+}
+
+.add_equip:hover {
+    transform: scale(1.1);
+    transition: .6s;
+    color: red;
+}
+
+
+.add_room {
+    display: block;
+    margin-left: 85%;
+    margin-top: 50px;
+    position: absolute;
+}
+
+.add_room:hover {
+    transform: scale(1.1);
+    transition: .6s;
+    color: red;
+}
+
 /* кнопка поиска */
 
 .search-box {
@@ -66,7 +107,6 @@
     transform: scale(1.1);
     transition: .6s;
 }
-
 
 
 .u-section-1 .u-sheet-1 {

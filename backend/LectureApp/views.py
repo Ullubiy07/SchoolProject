@@ -10,7 +10,7 @@ from .models import *
 from .utils import *
 
 from main.models import *
-from backend.main.utils import DataMixin
+from main.utils import DataMixin
 from django.db.models import Q
 
 
@@ -28,6 +28,7 @@ class LectureList(LoginRequiredMixin, DataMixin, ListView):
             context["mode"] = "Просмотр"
         else:
             context["mode"] = self.mode
+            context['perm'] = True
         c_def = self.get_user_context(title='Список лекций')
         return dict(list(context.items()) + list(c_def.items()))
 

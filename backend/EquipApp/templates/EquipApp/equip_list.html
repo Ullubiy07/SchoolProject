@@ -12,6 +12,12 @@
     </div>
 </form>
 
+{% if equip_perm %}
+    <div class="button_add">
+        <a href='{% url "add_equip" %}' class="add_equip"><button type="button" style="background-color: #39c; border: none; padding: 10px; color: white; border-radius: 15px"><i class="fa fa-plus-circle"></i> Добавить</button></a>
+    </div>
+{% endif %}
+
 
 {% if mode == 'Владелец' %}
         <h1>Список оборудования вашей школы</h1>

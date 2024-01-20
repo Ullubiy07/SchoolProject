@@ -511,10 +511,6 @@
     padding: 30px;
 }
 
-.feedback:hover {
-    transform: scale(1, 1.1);
-    transition: .7s;
-}
 
 .greetings {
     width: 17ch;
