@@ -1,0 +1,64 @@
+kind: Environment
+name: school_exchange
+type: primary
+components:
+    -
+        kind: Application
+        name: app
+        gitRepo: 'https://github.com/Ullubiy07/SchoolProject.git'
+        gitBranch: main
+        gitApplicationPath: /
+        dockerCompose:
+            build:
+                context: .
+                dockerfile: ./docker/backend/Dockerfile
+                args:
+                    DJANGO_ENV: development
+                target: development_build
+            command:
+                - python
+                - '-Wd'
+                - manage.py
+                - runserver
+                - '0.0.0.0:8000'
+            environment:
+                DJANGO_ENV: development
+                DJANGO_SUPERUSER_EMAIL: admin@test.com
+                DJANGO_SUPERUSER_PASSWORD: daifi82e0pdsjg090134njdnsf
+                DJANGO_SUPERUSER_USERNAME: imadmin
+        volumes:
+            -
+                name: media
+                mount: /backend/media
+                subPath: ''
+    -
+        kind: Database
+        name: db
+        dockerCompose:
+            environment:
+                POSTGRES_DB: sch_project
+                POSTGRES_PASSWORD: Sg10233457
+                POSTGRES_USER: admin
+            image: 'postgres:13.4-alpine'
+        volumes:
+            -
+                name: dev-db-data
+                mount: /var/lib/postgresql/data
+                subPath: ''
+            -
+                name: dev-db-data-backups
+                mount: /backups
+                subPath: ''
+volumes:
+    -
+        name: media
+        size: 1Gi
+        type: disk
+    -
+        name: dev-db-data
+        size: 1Gi
+        type: disk
+    -
+        name: dev-db-data-backups
+        size: 1Gi
+        type: disk
