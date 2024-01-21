@@ -5,6 +5,7 @@ components:
     -
         kind: Application
         name: app
+        urlHandle: schoolexchange
         gitRepo: 'https://github.com/Ullubiy07/SchoolProject.git'
         gitBranch: main
         gitApplicationPath: /
