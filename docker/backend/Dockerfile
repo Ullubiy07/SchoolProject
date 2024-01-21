@@ -85,12 +85,12 @@ RUN --mount=type=cache,target="$POETRY_CACHE_DIR" \
 
 RUN chmod +x '/docker-entrypoint.sh'
 
-#USER resources
+USER resources
 
 # We customize how our app is loaded with the custom entrypoint:
 ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
 
 FROM development_build AS production_build
 
-COPY --chown=dentaal:dentaal ./backend /backend
+COPY --chown=resources:resources ./backend /backend
 #COPY --chown=dentaal:dentaal ./docker/backend/gunicorn.sh /code
