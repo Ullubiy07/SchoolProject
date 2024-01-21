@@ -6,6 +6,7 @@ services:
       image: app:development
       ports:
         - "8000:8000"
+        - 8000
       build:
         context: .
         dockerfile: ./docker/backend/Dockerfile
