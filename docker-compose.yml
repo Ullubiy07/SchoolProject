@@ -4,6 +4,8 @@ services:
   app:
     <<: &app
       image: app:development
+      ports:
+        - 8000
       build:
         context: .
         dockerfile: ./docker/backend/Dockerfile
