@@ -55,7 +55,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'SchoolProject.urls'
 
-CSRF_TRUSTED_ORIGINS = ['https://backend-schoolexchange.bunnyenv.com/']
+CSRF_TRUSTED_ORIGINS = ['https://backend-schoolexchange.bunnyenv.com']
 
 TEMPLATES = [
     {
@@ -137,4 +137,4 @@ MEDIAFILES_DIRS = []
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-DSS_SERVER_URL = "https://dss-mrendor.cloud.okteto.net"
+DSS_SERVER_URL = "https://backend-schoolexchange.bunnyenv.com"
