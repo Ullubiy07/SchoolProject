@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["app-mrendor.cloud.okteto.net", "localhost", "backend-schoolexchange.bunnyenv.com"]
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -54,7 +55,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'SchoolProject.urls'
 
-CSRF_TRUSTED_ORIGINS = ['https://app-mrendor.cloud.okteto.net']
+CSRF_TRUSTED_ORIGINS = ['https://app-mrendor.cloud.okteto.net', "backend-schoolexchange.bunnyenv.com"]
 
 TEMPLATES = [
     {
