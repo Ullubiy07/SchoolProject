@@ -141,14 +141,14 @@ class EquipQueryForm(forms.ModelForm):
         return quantity
 
 
-class EquipAddSchedule(forms.ModelForm):
-    class Meta:
-        model = Equipment
-        fields = ["day_and_time"]
-
-        widgets = {
-            'day_and_time': forms.TextInput(attrs={
-                'class': 'equip_schedule',
-                'placeholder': 'Понедельник, 19:40, 20:40'
-            })
-        }
+# class EquipAddSchedule(forms.ModelForm):
+#     class Meta:
+#         model = Equipment
+#         fields = ["day_and_time"]
+#
+#         widgets = {
+#             'day_and_time': forms.TextInput(attrs={
+#                 'class': 'equip_schedule',
+#                 'placeholder': 'Понедельник, 19:40, 20:40'
+#             })
+#         }

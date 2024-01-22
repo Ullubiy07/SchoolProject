@@ -25,7 +25,7 @@ from RoomApp.models import RoomBooking, RoomQuery
 from main.client import DssClient, SignatureSpec
 from main.forms import RegisterUserForm, LoginUserForm, ChangeUserDataForm, ChangePasswordForm, SupplyManagerSignForm, SchoolForm
 from main.models import SchRep, Teacher, SupplyManager
-from main.utils import DataMixin
+from backend.main.utils import DataMixin
 import httpx
 import datetime
 
