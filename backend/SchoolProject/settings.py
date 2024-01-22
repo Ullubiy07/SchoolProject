@@ -55,7 +55,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'SchoolProject.urls'
 
-CSRF_TRUSTED_ORIGINS = ['https://app-mrendor.cloud.okteto.net', "backend-schoolexchange.bunnyenv.com"]
+CSRF_TRUSTED_ORIGINS = ['https://backend-schoolexchange.bunnyenv.com/']
 
 TEMPLATES = [
     {
