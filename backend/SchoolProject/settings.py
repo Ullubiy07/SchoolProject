@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-^-+sd5q8y$oxpy%j#%@5k&%*z00vkvxq+9ogp%lu3hqs=n%3$6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["app-mrendor.cloud.okteto.net", "localhost", "backend-schoolexchange.bunnyenv.com"]
+ALLOWED_HOSTS = ["backend-schoolexchange.bunnyenv.com", "localhost"]
 
 
 # Application definition
@@ -138,3 +138,4 @@ MEDIAFILES_DIRS = []
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DSS_SERVER_URL = "https://backend-schoolexchange.bunnyenv.com"
+SITE_ID = 1
