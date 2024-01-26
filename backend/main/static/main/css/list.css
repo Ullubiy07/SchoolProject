@@ -1,8 +1,7 @@
 .add_lecture {
     display: block;
-    margin-left: 85%;
-    margin-top: 50px;
-    position: absolute;
+    position:fixed;
+    bottom: 0;
 }
 
 .add_lecture:hover {
@@ -14,9 +13,8 @@
 
 .add_equip {
     display: block;
-    margin-left: 85%;
-    margin-top: 50px;
-    position: absolute;
+    position:fixed;
+    bottom: 0;
 }
 
 .add_equip:hover {
