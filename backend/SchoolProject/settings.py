@@ -27,10 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["backend-schoolexchange.bunnyenv.com", "localhost"]
 
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend'
-]
-
 # Application definition
 
 INSTALLED_APPS = [
