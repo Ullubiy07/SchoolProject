@@ -28,9 +28,8 @@
 
 .add_room {
     display: block;
-    margin-left: 85%;
-    margin-top: 50px;
-    position: absolute;
+    position:fixed;
+    bottom: 0;
 }
 
 .add_room:hover {
